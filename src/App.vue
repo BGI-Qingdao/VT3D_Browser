@@ -7,7 +7,7 @@
       </el-menu>
     </header>
     <article>
-        <component :G_URL='G_URL' @browse='BrowseURL' v-bind:is="selected"></component>
+        <component :G_Atlas='G_Atlas' @browse='BrowseURL' v-bind:is="selected"></component>
     </article>
     <footer>
       <hr>
@@ -30,7 +30,7 @@ import Viewer from "./Viewer.vue"
 export default {
   data() {
     return {
-      G_URL:'',
+      G_Atlas:'',
       activeIndex: '1',
       selected:"Home"
     }
@@ -55,8 +55,8 @@ export default {
             this.selected = "Home";
         }
     },
-    BrowseURL(url){
-        this.G_URL = url;
+    BrowseURL(atlas){
+        this.G_Atlas = atlas;
         this.$nextTick(() => {
             this.handleSelect("2",["2"]);
         });

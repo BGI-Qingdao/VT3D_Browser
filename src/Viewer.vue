@@ -21,14 +21,11 @@
           </div> 
           <!-- end of dialog div -->
       </el-dialog>
-      <el-dialog title="MIP image" width="95%"  style="width:1000px;" :visible.sync="mip_drawer" direction="ltr">
-          <img :src=fish_url >
-      </el-dialog>
     </div>
     <!---------------------------- All floating items end --------------------------------------------------- -->
     <!---------------------------- Main windown begin --------------------------------------------------- -->
     <el-row>
-      <el-button class="floatsetting" v-show="!display_setting" type="primary" icon="el-icon-setting"  @click="span_setting" >{{setting_title}}</el-button>
+      <el-button class="floatsetting" v-show="!display_setting" type="primary" icon="el-icon-setting" @click="span_setting" >{{setting_title}}</el-button>
       <!-- ----------The setting grid begin --------------------------------------------------------------- -->
       <el-col :span="setting_w" style="height:100%">
           <div class="grid-content bg-purple">
@@ -53,49 +50,6 @@
                                  </el-select>
                              </el-col>
                          </el-row>
-                         <el-row style="margin-top:3px;margin-bottom:2px">
-                             <el-col :span="8" >
-                                <span  class='mspan'>Data:</span>
-                             </el-col>
-                             <el-col :span="16" >
-                                 <el-select v-model="curr_sample" placeholder="curr_sample" @change="OnChangeSample">
-                                   <el-option
-                                     v-for="item in all_sample"
-                                     :key="item"
-                                     :label="item"
-                                     :value="item">
-                                   </el-option>
-                                 </el-select>
-                             </el-col>
-                         </el-row>
-                         <el-row style="margin-top:3px;margin-bottom:2px">
-                             <el-col :span="8" >
-                                <span  class='mspan'>Corrdinate:</span>
-                             </el-col>
-                             <el-col :span="16" >
-                                 <el-select  v-model="curr_coord" placeholder="curr_coord" @change="OnChangeCoord">
-                                   <el-option
-                                     v-for="item in coord_array"
-                                     :key="item"
-                                     :label="item"
-                                     :value="item">
-                                   </el-option>
-                                 </el-select>
-                             </el-col>
-                         </el-row>
-                         <!--
-                         <el-row style="margin-top:3px;margin-bottom:2px">
-                             <el-col :span="8" >
-                                <span  class='mspan'>blendMode:</span>
-                             </el-col>
-                             <el-col :span="16" >
-                                 <el-select  v-model="curr_blender" placeholder="curr_blender" @change="OnChangeBlender">
-                                   <el-option key="source-over" label="alpha" value="source-over"></el-option>
-                                   <el-option key="lighter" label="lighter" value="lighter"></el-option>
-                                 </el-select>
-                             </el-col>
-                         </el-row>
-                         -->
                          <!-- ----------Choose mode end --------------------------------------------------------------- -->
                      </div>
                      <!-- ----------The Baisc settings end -------------------------------------------------------------- -->
@@ -104,7 +58,7 @@
                       <el-collapse-item :title="mode_title" name="1" >
                       <!-- ----------mode setting begin --------------------------------------------------------------- -->
                          <!-- ----------cell type mode begin--------------------------------------------------------------- -->
-                         <div align="center"  v-show="is_ct_mode" style="margin:3px;   border: 3px solid #ccc;">
+                         <div align="center" v-show="is_ct_mode" style="margin:3px; border: 3px solid #ccc;">
                             <el-row style="margin-top:3px;margin-bottom:2px">
                                 <el-col :span="8" >
                                    <span  class='mspan'>Annotation:</span>
@@ -165,43 +119,10 @@
                          </div>
                          <!-- ----------cell type mode end--------------------------------------------------------------- -->
                          <!-- ----------gene selection mode start--------------------------------------------------------------- -->
-                         <div align="center"  v-show="is_ge_mode" style="margin:3px;   border: 3px solid #ccc;">
-                           <!--
-                            <el-row style="margin-top:3px;margin-bottom:2px">
-                                <el-col :span="8" >
-                                   <span  class='mspan'>Type:</span>
-                                </el-col>
-                                <el-col :span="16" >
-                                    <el-select  v-model="curr_genename_system" placeholder="curr_genename_system" @change="OnGeneNameSystemChange">
-                                      <el-option
-                                        v-for="item in genename_array"
-                                        :key="item"
-                                        :label="item"
-                                        :value="item">
-                                      </el-option>
-                                    </el-select>
-                                </el-col>
-                            </el-row>
-                            <el-row style="margin-top:3px;margin-bottom:2px">
-                                <el-col :span="8" >
-                                   <span  class='mspan'>Normed:</span>
-                                </el-col>
-                                <el-col :span="16" >
-                                    <el-select  v-model="curr_norm" placeholder="curr_norm" @change="OnGeneNormChange">
-                                      <el-option
-                                        v-for="item in normed_array"
-                                        :key="item"
-                                        :label="item"
-                                        :value="item">
-                                      </el-option>
-                                    </el-select>
-                                </el-col>
-                            </el-row>
-                            <hr class="dhr">
-                           -->
+                         <div align="center"  v-show="is_ge_mode" style="margin:3px; border: 3px solid #ccc;">
                             <div align="left" style="margin-left:10px;">
                                 <el-row style="margin-top:1px;margin-bottom:1px">
-                                    <span class='mspan'>Please choose an DEG:</span>
+                                    <span class='mspan'>Please choose an Gene:</span>
                                 </el-row>
                                 <el-row style="margin-top:3px;margin-bottom:2px">
                                     <el-col :span="16" >
@@ -235,68 +156,11 @@
                                         :page-sizes="[3,5,10]" :page-size="pageSize" :current-page.sync="currentPage">
                                         </el-pagination>
                                 </el-row>
-
-                                <!--
-                                <el-row style="margin-top:3px;margin-bottom:2px">
-                                    <el-col :span="8" >
-                                        <span class='mspan'>Min Exp:</span>
-                                    </el-col>
-                                    <el-col :span="15" >
-                                        <el-slider  v-model="smallestExpression" :step="0.5" :min="0" :max="curr_max_exp" @change="changeExpression" show-stops>
-                                        </el-slider>
-                                    </el-col>
-                                </el-row>
-                                <el-row style="margin-top:3px;margin-bottom:2px">
-                                    <el-col :span="8" >
-                                        <span class='mspan'>Max Exp:</span>
-                                    </el-col>
-                                    <el-col :span="15" >
-                                        <el-slider  v-model="largestExpression" :step="0.5" :min="0" :max="curr_max_exp" @change="changeExpression" show-stops>
-                                        </el-slider>
-                                    </el-col>
-                                </el-row>
-                                -->
                             </div>
-                            <el-row style="margin-top:2px;margin-bottom:3px">
-                                <el-button type="success"  @click.native="OnOpenFISH">MIP image</el-button>
-                            </el-row>
                          </div>
                          <!-- ----------gene selection mode start--------------------------------------------------------------- -->
                          <!-- ----------digital in situ mode start--------------------------------------------------------------- -->
                          <div align="center"  v-show="is_gc_mode" style="margin:3px; border: 3px solid #ccc;">
-                            <!--
-                            <el-row style="margin-top:3px;margin-bottom:2px">
-                                <el-col :span="8" >
-                                   <span  class='mspan'>Type:</span>
-                                </el-col>
-                                <el-col :span="16" >
-                                    <el-select  v-model="curr_genename_system" placeholder="curr_genename_system" @change="OnGeneNameSystemChange">
-                                      <el-option
-                                        v-for="item in genename_array"
-                                        :key="item"
-                                        :label="item"
-                                        :value="item">
-                                      </el-option>
-                                    </el-select>
-                                </el-col>
-                            </el-row>
-                            <el-row style="margin-top:3px;margin-bottom:2px">
-                                <el-col :span="8" >
-                                   <span  class='mspan'>Normed:</span>
-                                </el-col>
-                                <el-col :span="16" >
-                                    <el-select  v-model="curr_norm" placeholder="curr_norm" @change="OnGeneNormChange">
-                                      <el-option
-                                        v-for="item in normed_array"
-                                        :key="item"
-                                        :label="item"
-                                        :value="item">
-                                      </el-option>
-                                    </el-select>
-                                </el-col>
-                            </el-row>
-                            <hr class="dhr">
-                            -->
                             <el-row style="margin-top:3px;margin-bottom:2px">
                                 <el-col :span="6" >
                                    <span  class='mspan'>red:</span>
@@ -550,7 +414,7 @@
 </template>
 
 <script>
-//import packages ------------------------------------
+//import packages begin------------------------------------
 import $ from 'jquery';
 import * as echarts from 'echarts';
 import 'echarts-gl';
@@ -558,23 +422,13 @@ import VChart, { THEME_KEY } from "vue-echarts";
 import { Draggable } from 'draggable-vue-directive';
 import vdr from 'vue-draggable-resizable-gorkys'
 import { Sketch } from 'vue-color'
-// axis limitation conf --------------------------------
-var idvd_conf_corrected = require('../confs/individual_corrected.js');
-var idvd_conf_rotate = require('../confs/individual_rotated.js');
-// cell type details conf --------------------------------
-var CT_CONFS = require('../confs/individual_conf.js')
-// cell type legend and the color conf --------------------------------
+//import packages end------------------------------------
+
+//import colors begin------------------------------------
 var COLOR_ALL = require('../confs/discret_color.js');
-var celltype_legend = require('../confs/CellType.js');
 var COLOR_default = COLOR_ALL.default_colors;
-var COLOR_9 = COLOR_ALL.color_9;
-// cell type legend and the color conf --------------------------------
-// URL manager
-var url_manager = require('../confs/urls.js');
-var CT_URL = url_manager.ANNO_URL;
-var CP_URL = url_manager.MESH_URL;
-// Gene ID Mapping table
-var gene_id_url = url_manager.GENETABLE_URL;
+var COLOR_mesh = COLOR_ALL.mesh_colors;
+//import colors end------------------------------------
 
 export default {
 components: {
@@ -585,140 +439,45 @@ components: {
 directives: {
   Draggable,
 },
+props: ['G_Atlas'],
 data() {
     return {
-      // setting basics --------------------------------------
+      // setting basics begin --------------------------------------
       display_setting: true,
       setting_title :'Hide settings',
       setting_w: 4,
       display_w: 20,
       // collapse details   
       collapseName: '1',
-      // valid mode:
+      // setting basics end --------------------------------------
+
+      // working mode begin ----------------------------------------
       all_modes: [
-          'CellTypes',
-          'GeneExpression',
-          'Digital_in_situ',
+          "CellTypes",
+          "GeneExpression",
+          "Digital_in_situ",
       ],
       curr_mode : 'CellTypes',
+      mode_title: 'CellType setting',
       // mode tags
       is_ct_mode: true,
       is_ge_mode: false,
       is_gc_mode: false,
-      // valid samples:
-      all_sample: [
-           'All17Sample',
-           'WT',
-           '0hpa1',
-           '0hpa2',
-           '12hpa1',
-           '12hpa2',
-           '36hpa1',
-           '36hpa2',
-           '3dpa1',
-           '3dpa2',
-           '5dpa1',
-           '5dpa2',
-           '7dpa1',
-           '7dpa2',
-           '10dpa1',
-           '10dpa2',
-           '14dpa1',
-           '14dpa2',
-      ],
-      curr_sample: 'WT',
-      mode_title:'CellType setting',
-      //------------body posture confs begin------
-      // coordinate tag
-      coord_tag : 'adjusted',
-      //------------body posture confs end ------
-      
-      //------------color legends confs begin------
-      // test color 
-      COLOR_9 : COLOR_9,
-      COLOR_default :COLOR_default,
-      COLOR_ALL2: COLOR_default,
-      current_color_all: null,
-      currentCellID: '',
-      color: '',
-      //------------color legends confs end------
-      //------------drag element confs begin------
-      // test drag
-      //------------drag element confs end------
-      //------------roi confs begin------
-      z_scale:1,
-      tmp_z_scale:1,
-      // roi
-      tmp_x_min:0,
-      tmp_y_min:0,
-      tmp_z_min:0,
-      tmp_x_max:300,
-      tmp_y_max:300,
-      tmp_z_max:300,
-      x_min:0,
-      y_min:0,
-      z_min:0,
-      x_max:300,
-      y_max:300,
-      z_max:300,
-      //------------roi confs end------
-      // drawing details conf start ----------
-      black_background:true,
-      draw_legends:true,
-      draw_grids:false,
-      draw_box :true,
-      adjusted_posture:true,
-      symbolSize:2,
-      symbolAlpha:1.0,
-      // drawing details conf end----------
-      // echarts option begin -------------
-      chartWidth:'100%',
-      model_only:true,
-      data_valid:false,
-      option_mo: {
-        backgroundColor:'#000000',
-        title : {
-            text : 'Loading data now ...',
-            left: "center",
-            top: "center",
-            textStyle: {
-               color: '#cccccc'
-            },
-        }
-      },
-      option: {
-        backgroundColor:'#000000',
-        title : {
-            text : 'Loading data now ...',
-            left: "center",
-            top: "center",
-            textStyle: {
-               color: '#cccccc'
-            },
-        }
-      },
+      // working mode end ----------------------------------------
+
       //------------data selection for cell type begin ------
-      // curr selection
-      curr_name : null,
-      curr_rs : null,
       final_clusters: [],
       tmp_cluster_num: 0,
       all_clusters: 0,
       saved_clusters:[], // the selection cache
       selected_rs_index:"0",
-      coord_array : [
-            'Raw posture',
-            'Adjusted posture',
-      ],
-      anno_array : CT_CONFS.label_WT.anno,
+      anno_array : [],  // CT_CONFS.label_WT.anno,
       curr_anno : null,
-      curr_coord : null,
-      curr_blender: "source-over",
       rawdata:null,
       jsondata : null,
       //------------data selection for cell type end ------
-      //------------cell type selection begin ------
-      isCTCHidden:true,
+
+      //------------cell type table begin ------
       tableDataClusters: [],
       height:'250px',
       pageSize:5,
@@ -726,36 +485,23 @@ data() {
       min_cluster_number: 0,
       max_cluster_number: 100,
       drawer:false,
-      //------------cell type selection end------
+      //------------cell type table end------
 
       //------------gene expression selection start------
-      genename_array : [
-         'SMED',
-         'SMESG'
-      ],
-      normed_array : [
-         'scaled',
-         'sct_transformed',
-      ],
       // 2022-10-10, gene table data
-      tableData: [],
       allTableData: [],
+      tableData: [],
       pageSize:5,
       currentPage:1,
       // end
       curr_selected_gene : '',
       input_gene_id : '',
       curr_gene : "",
-      curr_genename_system : 'SMESG',
-      curr_norm : 'sct_transformed',
-      curr_gene_url : url_manager.GENE_URL.SMESG.sct_transformed,
+      curr_gene_url :  '',// url_manager.GENE_URL.SMESG.sct_transformed,
       gene_json_raw : null,
       gene_json_data : null,
-      //smallestExpression:0,
-      //largestExpression:10,
       curr_max_exp:6,
       fish_url:null,
-      mip_drawer:false,
       //------------gene expression selection end------
 
       //------------channel selection start------
@@ -798,19 +544,87 @@ data() {
       },
       min_cutoff : 3,
       //------------channel selection end------
+
       //------------model data : mesh begin ------
-      mesh_json:null,
-      mesh_conf : { 
-        names:    ['Body','Neural','Gut','Pharynx'],
-        legends : ['Body_mesh','Neural_mesh','Gut_mesh','Pharynx_mesh'],
+      mesh_json : null,
+      mesh_conf : {
+        names:    [],
+        legends : [],
         //colors :  ['#cc6600','#ffff00','#ff0000','#00ff00'],
-        colors :  ['#7d6a43','#b6b6b6','#a871a7','#609148'],
-        opacity:  [ 0.3, 0.55, 0.55, 0.55],
+        colors :  COLOR_mesh,
       },
       //------------model data : mesh begin ------
+
+      //------------color legends confs begin------
+      // test color 
+      COLOR_default :COLOR_default,
+      COLOR_ALL2: COLOR_default,
+      current_color_all: null,
+      currentCellID: '',
+      color: '',
+      //------------color legends confs end------
+
+      //------------roi confs begin------
+      z_scale:1,
+      tmp_z_scale:1,
+      // roi
+      tmp_x_min:0,
+      tmp_y_min:0,
+      tmp_z_min:0,
+      tmp_x_max:300,
+      tmp_y_max:300,
+      tmp_z_max:300,
+      x_min:0,
+      y_min:0,
+      z_min:0,
+      x_max:300,
+      y_max:300,
+      z_max:300,
+      //------------roi confs end------
+      // drawing details conf start ----------
+      black_background:true,
+      draw_legends:true,
+      draw_grids:false,
+      draw_box :true,
+      adjusted_posture:true,
+      symbolSize:2,
+      symbolAlpha:1.0,
+      // drawing details conf end----------
+      // echarts option begin -------------
+      chartWidth:'100%',
+      model_only:true,
+      data_valid:false,
+      curr_blender: "source-over",
+      option_mo: {
+        backgroundColor:'#000000',
+        title : {
+            text : 'Loading data now ...',
+            left: "center",
+            top: "center",
+            textStyle: {
+               color: '#cccccc'
+            },
+        }
+      },
+      option: {
+        backgroundColor:'#000000',
+        title : {
+            text : 'Loading data now ...',
+            left: "center",
+            top: "center",
+            textStyle: {
+               color: '#cccccc'
+            },
+        }
+      },
+
+
     }
   },
   methods: {
+    InitAtlas(){
+
+    },
     // ------------------ resize page begin ----------------------
     resize_option() {
        this.$nextTick(() => {
@@ -931,12 +745,6 @@ data() {
         this.updateJsonData();
         this.update_option();
     },
-    OnOpenFISH(){
-        var base_url =  url_manager.PSEUDO_FISH_URL[this.curr_genename_system];
-        this.fish_url = base_url + '/' + this.curr_name+'/'+this.curr_name+'_'+this.curr_gene+".green.MIR.png";
-        console.log(this.fish_url)
-        this.mip_drawer = true;
-    },
     refreshGene(gname, force) {
         if ( gname == null || gname == "" ) return; 
         if (this.curr_gene != gname || force ) {
@@ -998,11 +806,6 @@ data() {
     OnDrawerClose(done){
         this.drawer= false;
         done();
-    },
-    openCTC(){
-        this.isCTCHidden = !this.isCTCHidden;
-        this.drawer = !this.drawer;
-        console.log(this.drawer);
     },
     getRowCelltype(row){
       // 1. get row id when click on row (except for selection box)
@@ -1101,38 +904,6 @@ data() {
         }
         this.OnChangeSample();
     },
-    setCoordTag(){
-        if(this.curr_coord == "Raw posture" || this.curr_coord == "Adjusted posture" ) {
-            if (this.curr_coord == "Raw posture"){
-                this.coord_tag = "raw";
-            } else {
-                this.coord_tag = "adjusted";
-            }
-        }
-    },
-    resetSampleConf(){
-        this.resetCellTypeSampleConf();
-        this.setCoordTag();
-    },
-
-    OnChangeSample(){
-        this.curr_name = this.curr_sample;
-        this.resetSampleConf();
-        //deep clean buffer
-        this.cleanMesh();
-        this.cleanBuffer();
-        this.update_option_deep();
-        // reset mesh and ROI data
-        this.resetROIdata();
-        this.resetMesh();
-        if(this.curr_mode == "CellTypes"){
-            this.resetAnno();
-        } else if (this.curr_mode == "GeneExpression"){
-            this.resetGene();
-        } else {
-            this.resetChannel();
-        }
-    },
     // ------------------ basic conf functions end----------------------
     // --------------cell type detail confs begin ----------------------------
     resetCellTypeSampleConf(){
@@ -1144,22 +915,6 @@ data() {
         this.cleanBuffer();
         this.resetAnno();
         this.update_option_deep();
-    },
-    OnChangeBlender(){
-        this.update_option();
-    },
-    OnChangeCoord(){
-        //deep clean buffer
-        this.cleanMesh();
-        this.cleanBuffer();
-        this.update_option_deep();
-        // reset mesh and ROI data
-        this.setCoordTag();
-        this.resetROIdata();
-        this.resetMesh();
-        if(this.curr_mode == "CellTypes"){
-            this.resetAnno();
-        }
     },
     // --------------cell type detail confs end ----------------------------
     //-------------3d box conf start-------------------//
@@ -1599,7 +1354,7 @@ data() {
             var curr_name = this.mesh_conf.names[i];
             var curr_legend_name = this.mesh_conf.legends[i];
             var curr_color = this.mesh_conf.colors[i];
-            var curr_opacity = this.mesh_conf.opacity[i];
+            var curr_opacity = 0.5; 
             if ( this.mesh_json[curr_name]['xyz'].length == 0 ) 
                 continue;
             //console.log('curr_legend_name');
@@ -1889,7 +1644,7 @@ data() {
         var boxWidth  = this.getWidth();
         var boxHeight = this.getDepth()*this.z_scale;
         var boxDepth  = this.getHeight();
-        
+
         var box_series = this.getBoxSeries(used_xmin,
                                       used_ymin,
                                       used_zmin,
@@ -1996,7 +1751,7 @@ data() {
   },
   mounted() {
     window.addEventListener("resize", this.resize_option,true);
-    this.OnChangeSample();
+    this.InitAtlas();
   },
 };
 </script>
