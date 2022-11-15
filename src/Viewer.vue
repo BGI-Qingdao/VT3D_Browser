@@ -85,9 +85,6 @@
                                     <el-table-column property="Celltype" label="Cell Type" > </el-table-column>
                                     <el-table-column label="Display" >
                                       <el-button @click="showColorPalette">color</el-button>
-                                      <!-- <template slot-scope="scope"> -->
-                                        <!-- <el-button size="mini" type="primary" plain @click ="changeColor">color</el-button> -->
-                                      <!-- </template> -->
                                     </el-table-column>
                                 </el-table>
                                 <el-pagination layout="total,sizes" 
@@ -332,6 +329,11 @@
                                       <el-button type="success" @click.native="changeZMax">Apply</el-button>
                                   </el-col>
                               </el-row>
+                              <el-row style="margin-top:3px;margin-bottom:2px">
+                                  <el-col :span="24" >
+                                      <el-button type="primary" @click.native="resetROI">ResetROI</el-button>
+                                  </el-col>
+                              </el-row>
                           </div>
                          <!-- ----------roi setting end--------------------------------------------------------------- -->
                       </el-collapse-item>
@@ -463,16 +465,15 @@ data() {
       is_ct_mode: true,
       is_ge_mode: false,
       is_gc_mode: false,
+      box_scale: 0,
       // working mode end ----------------------------------------
 
       //------------data selection for cell type begin ------
-      final_clusters: [],
-      tmp_cluster_num: 0,
-      all_clusters: 0,
-      saved_clusters:[], // the selection cache
-      selected_rs_index:"0",
-      anno_array : [],  // CT_CONFS.label_WT.anno,
+      anno_array : [],
       curr_anno : null,
+      curr_legends:{},
+      final_clusters: [],
+      all_clusters: 0,
       rawdata:null,
       jsondata : null,
       //------------data selection for cell type end ------
@@ -485,14 +486,13 @@ data() {
       min_cluster_number: 0,
       max_cluster_number: 100,
       drawer:false,
+      saved_clusters:[], // the selection cache
       //------------cell type table end------
 
       //------------gene expression selection start------
       // 2022-10-10, gene table data
       allTableData: [],
       tableData: [],
-      pageSize:5,
-      currentPage:1,
       // end
       curr_selected_gene : '',
       input_gene_id : '',
@@ -622,9 +622,6 @@ data() {
     }
   },
   methods: {
-    InitAtlas(){
-
-    },
     // ------------------ resize page begin ----------------------
     resize_option() {
        this.$nextTick(() => {
@@ -648,7 +645,93 @@ data() {
         }
     },
     // ------------------ resize page end----------------------
- 
+
+    // ---- init atlas basics begin ---------------------------------------
+    init_scale() {
+        var box = this.G_Atlas['summary']['box']
+        var xlen = box['xmax'] - box['xmin'] +1
+        var ylen = box['ymax'] - box['ymin'] +1
+        var zlen = box['zmax'] - box['zmin'] +1
+        var max_length = Math.max(xlen,ylen,zlen);
+        this.box_scale = 1.0/max_length*500;
+        if ( this.box_scale > 1 ) this.box_scale = 1;
+    },
+    InitAtlas() {
+        // Init the celltype setting panel
+        this.anno_array = this.G_Atlas['summary']['annokeys'];
+        this.curr_anno = this.anno_array[0];
+        var tempkey = this.curr_anno+'_int2legend';
+        this.curr_legends = this.G_Atlas['summary']['annomapper'][tempkey]
+        this.init_scale();
+        this.resetROIdata();
+        this.OnChangeAnno();
+    },
+    // ---- init atlas basics end ---------------------------------------
+
+    // ---- celltype conf panel begin -----------------------------------
+    cleanCellTypeBuffer(){
+      this.jsondata = null ;
+      this.rawdata = null;
+    },
+
+    InitAnnoTable() {
+        var summary = this.G_Atlas['summary'];
+        var tempkey = this.curr_anno+'_legend2int';
+        var mapper = summary['annomapper'][tempkey]
+        var new_tableDataClusters = []
+        var legend_num = 0;
+        for (var key in mapper) {
+            new_tableDataClusters.push({ID: mapper[key], Celltype:key });
+            legend_num = legend_num + 1;
+        }
+        this.tableDataClusters = new_tableDataClusters;
+        this.all_clusters = legend_num;
+    },
+
+    resetCellTypeScattters(){
+        var used_url = this.G_Atlas["anno_url"] +"/"+this.curr_anno+".json"
+        var self = this;
+        console.log(used_url);
+        $.getJSON(used_url,function(_data) {
+          console.log('json loaded');
+          self.setAnnoData(_data);
+          self.update_option_deep();
+        });
+    },
+    setAnnoData(_data) {
+        var curr_draw_datas= [];
+        this.final_clusters = new Array(this.all_clusters).fill(0);
+        for(var i=0;i<this.all_clusters;i++){
+            curr_draw_datas.push([])
+        }
+        // --------- iterate through real data (long)
+        for(var j=0 ; j< _data.length; j++){
+          var curr_item = _data[j];
+          //console.log(curr_item);
+          curr_draw_datas[parseInt(curr_item[3])].push([curr_item[0]*this.box_scale,curr_item[1]*this.box_scale,curr_item[2]*this.box_scale]);
+        } // end of for _data
+        // -------- mark empty group
+        for (var i = 0; i < this.all_clusters; i++){
+          if (curr_draw_datas[i].length == 0) {
+            this.final_clusters[i] = 0;
+          }else{
+            this.final_clusters[i] = 1;
+          }
+        }
+        this.rawdata = curr_draw_datas;
+        this.jsondata = curr_draw_datas;
+        this.data_valid = true
+    },
+    OnChangeAnno(){
+        this.cleanCellTypeBuffer();
+        this.COLOR_ALL2 = this.COLOR_default;
+        this.InitAnnoTable();
+        this.resetCellTypeScattters();
+        this.update_option_deep();
+    },
+    // ---- celltype conf panel end -----------------------------------
+
+
     //----------- gene select functions start -------------//
     update_gene_url() {
         this.curr_gene_url = url_manager.GENE_URL[this.curr_genename_system][this.curr_norm];
@@ -911,48 +994,31 @@ data() {
         this.curr_anno = this.anno_array[0];
         this.curr_coord = this.coord_array[0];
     },
-    OnChangeAnno(){
-        this.cleanBuffer();
-        this.resetAnno();
-        this.update_option_deep();
-    },
     // --------------cell type detail confs end ----------------------------
     //-------------3d box conf start-------------------//
     getXMin(){
-      if( this.coord_tag == "raw" ) 
-          return idvd_conf_rotate['label_'+this.curr_name].xmin/10;
-      else 
-          return idvd_conf_corrected['label_'+this.curr_name].xmin/10;
+        var summary = this.G_Atlas['summary'];
+        return summary['box']['xmin'] *this.box_scale;
     },
     getXMax(){
-      if( this.coord_tag == "raw" ) 
-          return idvd_conf_rotate['label_'+this.curr_name].xmax/10;
-      else 
-          return idvd_conf_corrected['label_'+this.curr_name].xmax/10;
+        var summary = this.G_Atlas['summary'];
+        return summary['box']['xmax'] *this.box_scale;
     },
     getYMin(){
-      if( this.coord_tag == "raw" ) 
-          return idvd_conf_rotate['label_'+this.curr_name].ymin/10;
-      else 
-          return idvd_conf_corrected['label_'+this.curr_name].ymin/10;
+        var summary = this.G_Atlas['summary'];
+        return summary['box']['ymin'] *this.box_scale;
     },
     getYMax(){
-      if( this.coord_tag == "raw" ) 
-          return idvd_conf_rotate['label_'+this.curr_name].ymax/10;
-      else 
-          return idvd_conf_corrected['label_'+this.curr_name].ymax/10;
+        var summary = this.G_Atlas['summary'];
+        return summary['box']['ymax'] *this.box_scale;
     },
     getZMin(){
-      if( this.coord_tag == "raw" ) 
-          return idvd_conf_rotate['label_'+this.curr_name].zmin/10;
-      else 
-          return idvd_conf_corrected['label_'+this.curr_name].zmin/10;
+        var summary = this.G_Atlas['summary'];
+        return summary['box']['zmin'] *this.box_scale;
     },
     getZMax(){
-      if( this.coord_tag == "raw" ) 
-          return idvd_conf_rotate['label_'+this.curr_name].zmax/10;
-      else 
-          return idvd_conf_corrected['label_'+this.curr_name].zmax/10;
+        var summary = this.G_Atlas['summary'];
+        return summary['box']['zmax'] *this.box_scale;
     },
     getWidth(){
       return this.getXMax()-this.getXMin()+2;
@@ -1105,73 +1171,6 @@ data() {
     },
     //-------------mesh managerment end -------------------//
     //-------------cell type data managerment start -------------------//
-    cleanBuffer(){
-      this.jsondata = null ;
-      this.rawdata = null;
-    },
-    resetAnno(){
-      var used_url="";
-      this.COLOR_ALL2 = this.COLOR_default;
-      if(this.curr_anno == "Single Cell WT lineage" ){
-          this.curr_rs = "SA_anno";
-          this.COLOR_ALL2 = this.COLOR_9;
-      } else if ( this.curr_anno == "Single Cell WT cluster"){
-          this.curr_rs = "SA_cluster";
-      } else if ( this.curr_anno == "Single Cell lineage"){
-          this.curr_rs = "major_anno";
-      } else if ( this.curr_anno == "Single Cell cluster"){
-          this.curr_rs = "major_celltype";
-      } else if ( this.curr_anno == "Single Cell sub cluster"){
-          this.curr_rs = "sc_subcluster";
-      } else if ( this.curr_anno == "SPC lineage"){
-          this.curr_rs = "nc_cluster36";
-      }
-      if(this.curr_coord == "Raw posture" || this.curr_coord == "Adjusted posture" ) {
-          used_url = CT_URL+"/"+this.curr_name+"/"+this.curr_rs+"."+this.coord_tag+".json";
-      } else {
-
-      }
-      var data_tag = this.curr_rs;
-      var self = this;
-      $.getJSON(used_url,function(_data) {
-        console.log("loaded");
-        self.setAnnoData(_data,data_tag);
-        self.update_option_deep();
-      });
-    },
-    setAnnoData(_data,data_tag){
-      console.log('json loaded');
-      var curr_draw_datas= [];
-      var total_cluster_number = celltype_legend[data_tag].LegendsNum;
-      this.final_clusters = new Array(total_cluster_number).fill(0);
-      this.all_clusters = total_cluster_number;
-      // ---------- iterate through clusters setting (short)
-      for(var i = 0; i<=total_cluster_number; i++ ){
-          curr_draw_datas.push([]);
-      }
-      // --------- iterate through real data (long)
-      for(var j=0 ; j< _data.length; j++){
-        var curr_item = _data[j];
-        //console.log(curr_item);
-        curr_draw_datas[parseInt(curr_item[3])].push([curr_item[0],curr_item[1],curr_item[2]]);
-      } // end of for _data
-      // -------- mark empty group
-      for (var i = 0; i < total_cluster_number; i++){
-        if (curr_draw_datas[i].length == 0) {
-          this.final_clusters[i] = 0;
-        }else{
-          this.final_clusters[i] = 1;
-        }
-      }
-      var new_tableDataClusters = [];
-      for (var i=0; i < this.all_clusters; i++){
-          new_tableDataClusters.push({ID: i, Celltype:celltype_legend[data_tag].Legends[i] });
-      }
-      this.tableDataClusters = new_tableDataClusters;
-      //console.log(this.tableDataClusters);
-      this.rawdata = curr_draw_datas;
-      this.jsondata = curr_draw_datas;
-    },
     //-------------cell type data managerment end-------------------//
     //-------------configure ROI start -------------------//
     changeZScale(){
@@ -1480,7 +1479,7 @@ data() {
         console.log('start series');
         for( var i = 0 ; i<this.all_clusters; i++ )
         {
-          var curr_legend_name = celltype_legend[this.curr_rs].Legends[i];
+          var curr_legend_name = this.curr_legends[i];
           var the_data = curr_draw_datas[i];
           if(this.final_clusters[i] == 0 || the_data.length==0){
             legend_show[curr_legend_name] = false;
@@ -1488,7 +1487,6 @@ data() {
             legend_show[curr_legend_name] = true;
           }
           legend_list.push(curr_legend_name);
-          //curr_color = COLOR_ALL[i];
           curr_color = this.COLOR_ALL2[i];
           var one_series = {
               name : legend_list[i],
@@ -1654,12 +1652,6 @@ data() {
         if(box_series!= null){
             series_list.push(box_series)
         }
-        //if( max10 == true ){
-        //  used_xmin = -10; used_xmax = 10; 
-        //  used_ymin = -10; used_ymax = 10; 
-        //  used_zmin = -10; used_zmax = 10; 
-        //  boxWidth = 60; boxHeight = 60; boxDepth = 60;
-        //}
         var opt={
           backgroundColor:bk_color,
           title :{
@@ -1736,7 +1728,7 @@ data() {
           viewControl: {
               // autoRotate: true,
               //projection: 'orthographic'
-              projection: 'perspective'
+              projection: 'perspective',
             }
           },
           series: series_list

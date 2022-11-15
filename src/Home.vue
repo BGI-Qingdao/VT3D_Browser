@@ -72,7 +72,7 @@ export default {
         },
         BrowseAtlas() {
             console.log(this.input_url);
-            this.$emit('browse',this.input_url);
+            this.$emit('browse',this.atlas);
         },
     },
     mounted() {
