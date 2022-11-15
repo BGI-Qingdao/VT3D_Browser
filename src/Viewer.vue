@@ -138,9 +138,7 @@
                                         :highlight-current-row='true'
                                         stripe
                                         @row-dblclick='handleRow'>
-                                            <el-table-column prop='smesg' label='SMESG'></el-table-column>
-                                            <el-table-column prop='smed' label='SMED'></el-table-column>
-                                            <el-table-column prop='gene_name' label='Name'></el-table-column>
+                                            <el-table-column prop='smed' label='gene name'></el-table-column>
                                         </el-table>
                                         <!-- gene table end-->
                                     </el-col>
@@ -494,10 +492,8 @@ data() {
       allTableData: [],
       tableData: [],
       // end
-      curr_selected_gene : '',
       input_gene_id : '',
       curr_gene : "",
-      curr_gene_url :  '',// url_manager.GENE_URL.SMESG.sct_transformed,
       gene_json_raw : null,
       gene_json_data : null,
       curr_max_exp:6,
@@ -505,10 +501,10 @@ data() {
       //------------gene expression selection end------
 
       //------------channel selection start------
-      input_gene_red:     'SMESG000066416.1',
-      input_gene_green:   'SMESG000008070.1',
-      input_gene_blue:    'SMESG000068721.1',
-      input_gene_gray:    'SMESG000033795.1',
+      input_gene_red:     '',
+      input_gene_green:   '',
+      input_gene_blue:    '',
+      input_gene_gray:    '',
       input_gene_cyan:    '',
       input_gene_magenta: '',
       input_gene_yellow:  '',
@@ -617,8 +613,6 @@ data() {
             },
         }
       },
-
-
     }
   },
   methods: {
@@ -645,6 +639,33 @@ data() {
         }
     },
     // ------------------ resize page end----------------------
+    // ------------------ basic conf functions begin----------------------
+    OnChangeMode(){
+        this.update_option_deep();
+        this.mode_title = this.curr_mode+" setting";
+        console.log(this.curr_mode)
+        if( this.curr_mode == "CellTypes") {
+            this.is_ct_mode = true;
+            this.is_gc_mode = false;
+            this.is_ge_mode = false;
+            // set a cell type
+            this.anno_array = this.G_Atlas['summary']['annokeys'];
+            this.curr_anno = this.anno_array[0];
+            var tempkey = this.curr_anno+'_int2legend';
+            this.curr_legends = this.G_Atlas['summary']['annomapper'][tempkey]
+            this.OnChangeAnno();
+        }else if ( this.curr_mode == "GeneExpression" ) {
+            this.is_ct_mode = false;
+            this.is_gc_mode = false;
+            this.is_ge_mode = true;
+            this.loadGeneTable();
+        } else {
+            this.is_ct_mode = false;
+            this.is_gc_mode = true;
+            this.is_ge_mode = false;
+        }
+    },
+    // ------------------ basic conf functions end----------------------
 
     // ---- init atlas basics begin ---------------------------------------
     init_scale() {
@@ -658,13 +679,9 @@ data() {
     },
     InitAtlas() {
         // Init the celltype setting panel
-        this.anno_array = this.G_Atlas['summary']['annokeys'];
-        this.curr_anno = this.anno_array[0];
-        var tempkey = this.curr_anno+'_int2legend';
-        this.curr_legends = this.G_Atlas['summary']['annomapper'][tempkey]
         this.init_scale();
         this.resetROIdata();
-        this.OnChangeAnno();
+        this.OnChangeMode();
     },
     // ---- init atlas basics end ---------------------------------------
 
@@ -687,7 +704,6 @@ data() {
         this.tableDataClusters = new_tableDataClusters;
         this.all_clusters = legend_num;
     },
-
     resetCellTypeScattters(){
         var used_url = this.G_Atlas["anno_url"] +"/"+this.curr_anno+".json"
         var self = this;
@@ -733,100 +749,35 @@ data() {
 
 
     //----------- gene select functions start -------------//
-    update_gene_url() {
-        this.curr_gene_url = url_manager.GENE_URL[this.curr_genename_system][this.curr_norm];
-    },
-    OnGeneNameSystemChange() {
-        this.update_gene_url();
-        if( this.curr_mode == "GeneExpression" ) {
-            this.resetDefaultGene();
-            this.resetGene();
-        } else {
-            this.resetDefaultChannelGene();
-            this.resetChannel();
-        }
-    },
-    resetDefaultGene() {
-
-    },
-    resetGene() {
-        this.gene_json_raw = null;
-        this.gene_json_data = null;
-
-        if(this.curr_selected_gene != "") {
-            this.curr_gene = this.curr_selected_gene;
-        } else if (this.input_gene_id != "") {
-            this.curr_gene = this.input_gene_id;
-        }
-        this.refreshGene(this.curr_gene,true);
-    },
-    OnGeneNormChange() {
-        this.update_gene_url();
-        if( this.curr_mode == "GeneExpression" ) {
-            this.resetGene();
-        } else {
-            this.resetChannel();
-        }
-    },
     loadGeneTable(){
         if ( this.allTableData.length <1 ) {
             // 2022-10-10 liyao: load gene id mapping table
             var self = this;
-            $.getJSON(gene_id_url, function(_data){
-                self.tableData = _data;
-                console.log('getOption');
-                console.log('loadGeneIDTable');
-                console.log(self.tableData);
-                self.allTableData = _data;
-                //self.selectSample(self.currentSpecies);
+            $.getJSON(this.G_Atlas["gene_url"], function(_data){
+                var td = []
+                for( var i = 0; i<_data.length; i++){
+                    td.push({'smed':_data[i]})
+                }
+                self.tableData = td;
+                self.allTableData = td;
             });
         }
     },
     updateTable(){
-        // 2022-10-10 search gene
-        console.log('updateTable');
+        // 2022-10-10  liyao:search gene
         var new_tableData = [];
         var arrayLength = this.allTableData.length;
-        if (this.curr_genename_system == 'SMESG'){
-            for (var i = 0; i < arrayLength; i++) {
-                if (this.allTableData[i]['smesg'].includes(this.input_gene_id)){
-                    new_tableData.push(this.allTableData[i]);
-                }else if (this.allTableData[i]['smed'].includes(this.input_gene_id)){
-                    new_tableData.push(this.allTableData[i]);
-                }else if (this.allTableData[i]['gene_name'].includes(this.input_gene_id)){
-                    new_tableData.push(this.allTableData[i]);
-                }
-            }
-        }else if (this.curr_genename_system == 'SMED') {
-            for (var i = 0; i < arrayLength; i++) {
-                if (this.allTableData[i]['smed'].includes(this.input_gene_id)){
-                    new_tableData.push(this.allTableData[i]);
-                }
+        for (var i = 0; i < arrayLength; i++) {
+            if (this.allTableData[i]['smed'].includes(this.input_gene_id)){
+                new_tableData.push(this.allTableData[i]);
             }
         }
         this.tableData = new_tableData;
     },
     handleRow(row,event,column){
-        if (this.curr_genename_system == 'SMESG'){
-            this.input_gene_id = row.smesg;
-            //this.curr_selected_gene = row.smesg;
-        }else if (this.curr_genename_system == 'SMED') {
-            this.input_gene_id = row.smed;
-            //this.curr_selected_gene = row.smed;
-        }
-        console.log(this.input_gene_id);
+        this.input_gene_id = row.smed;
         this.updateTable();
         this.refreshGene(this.input_gene_id,true);
-    },
-    UseGeneID() {
-        this.updateTable();
-    },
-    get_curr_gene_url(gene_name) {
-        return this.curr_gene_url+"/"+this.curr_name+"/"+gene_name+".json";
-    },
-    changeExpression(){
-        this.updateJsonData();
-        this.update_option();
     },
     refreshGene(gname, force) {
         if ( gname == null || gname == "" ) return; 
@@ -834,18 +785,13 @@ data() {
             this.gene_json_raw = null;
             this.gene_json_data = null;
             this.update_option_deep();
-            var self = this;
             this.curr_gene = gname;
-            var used_url = this.get_curr_gene_url(this.curr_gene);
-            //var used_url = this.curr_gene_url+"/"+this.curr_name+"/"+this.curr_gene+".json";
+            var used_url = this.G_Atlas['genes_url'] +'/'+this.curr_gene+".json";
+            var self = this;
             $.getJSON(used_url,function(_data) {
               self.setGeneData(_data);
               self.update_option_deep();
             });
-        }
-        console.log(this.input_gene_id);
-        if (this.input_gene_id != ''){
-
         }
     },
     setGeneData(_data) {
@@ -856,14 +802,10 @@ data() {
             var curr_item = _data[j];
             if( parseInt(curr_item[3])+1>  this.curr_max_exp)
                 this.curr_max_exp = parseInt(curr_item[3])+1;
-            gene_xyz.push( [curr_item[0],curr_item[1],curr_item[2],curr_item[3]]);
+            gene_xyz.push( [curr_item[0]*this.box_scale,curr_item[1]*this.box_scale,curr_item[2]*this.box_scale,curr_item[3]]);
         }
-        //this.smallestExpression = this.curr_max_exp/5*3 ;
-        //this.largestExpression = this.curr_max_exp;
-        console.log(this.curr_max_exp);
         this.gene_json_raw= gene_xyz;
         this.updateJsonData();
-        //this.gene_json_data = gene_xyz ;
     },
     //----------- gene select functions end -------------//
 
@@ -956,45 +898,6 @@ data() {
         this.resize_option();
     },
     // ------------------ functions for update echarts end -----------------
-    // ------------------ basic conf functions begin----------------------
-    OnChangeMode(){
-        this.mode_title = this.curr_mode+" setting";
-        console.log(this.curr_mode)
-        if( this.curr_mode == "CellTypes") {
-            this.is_ct_mode = true;
-            this.is_gc_mode = false;
-            this.is_ge_mode = false;
-            this.coord_array = [
-                'Raw posture',
-                'Adjusted posture',
-            ];
-        }else if ( this.curr_mode == "GeneExpression" ) {
-            this.is_ct_mode = false;
-            this.is_gc_mode = false;
-            this.is_ge_mode = true;
-            this.coord_array = [
-                'Adjusted posture',
-            ];
-            this.loadGeneTable();
-        } else {
-            this.is_ct_mode = false;
-            this.is_gc_mode = true;
-            this.is_ge_mode = false;
-            this.coord_array = [
-                'Adjusted posture',
-            ];
-            this.loadGeneTable();
-        }
-        this.OnChangeSample();
-    },
-    // ------------------ basic conf functions end----------------------
-    // --------------cell type detail confs begin ----------------------------
-    resetCellTypeSampleConf(){
-        this.anno_array = CT_CONFS["label_"+this.curr_sample].anno;
-        this.curr_anno = this.anno_array[0];
-        this.curr_coord = this.coord_array[0];
-    },
-    // --------------cell type detail confs end ----------------------------
     //-------------3d box conf start-------------------//
     getXMin(){
         var summary = this.G_Atlas['summary'];
@@ -1060,7 +963,7 @@ data() {
             this.update_option_deep()
         }
         if ( input_gene != "" ) {
-            var used_url = this.get_curr_gene_url(input_gene);
+            var used_url = this.G_Atlas['genes_url'] +'/'+input_gene+".json";
             var self = this;
             var kkey = key;
             $.getJSON(used_url,function(_data) {
@@ -1105,7 +1008,7 @@ data() {
         var gene_xyz = [];
         for(var j=0 ; j< _data.length; j++) {
             var curr_item = _data[j];
-            gene_xyz.push( [curr_item[0],curr_item[1],curr_item[2],curr_item[3]]);
+            gene_xyz.push([curr_item[0]*this.box_scale,curr_item[1]*this.box_scale,curr_item[2]*this.box_scale,curr_item[3]]);
         }
         this.channel_json_raw[key] = gene_xyz;
         this.update_onechannel_gene(key);
@@ -1170,8 +1073,7 @@ data() {
         }
     },
     //-------------mesh managerment end -------------------//
-    //-------------cell type data managerment start -------------------//
-    //-------------cell type data managerment end-------------------//
+
     //-------------configure ROI start -------------------//
     changeZScale(){
       this.z_scale = this.tmp_z_scale;
