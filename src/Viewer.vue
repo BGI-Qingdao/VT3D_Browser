@@ -546,7 +546,6 @@ data() {
       mesh_conf : {
         names:    [],
         legends : [],
-        //colors :  ['#cc6600','#ffff00','#ff0000','#00ff00'],
         colors :  COLOR_mesh,
       },
       //------------model data : mesh begin ------
@@ -681,6 +680,7 @@ data() {
         // Init the celltype setting panel
         this.init_scale();
         this.resetROIdata();
+        this.resetMesh()
         this.OnChangeMode();
     },
     // ---- init atlas basics end ---------------------------------------
@@ -1037,39 +1037,39 @@ data() {
     //-------------mesh managerment start -------------------//
     cleanMesh() {
       this.mesh_json = null;
+      this.mesh_conf.names = [];
+      this.mesh_conf.legends = [];
     },
     resetMesh() {
       this.cleanMesh();
-      // loading new mesh
-      var self = this;
-      var used_url = '';
-      if( this.coord_tag == "raw" ) {
-        used_url = CP_URL+"/"+this.curr_name+"_mesh.rotate.json";
-      } else {
-        used_url = CP_URL+"/"+this.curr_name+"_mesh.apdv.json";
-      }
+      var used_url = this.G_Atlas['meshes_url'];
       console.log(used_url);
+      var self = this;
       $.getJSON(used_url,function(_data) {
         console.log("mesh loaded");
+        console.log(_data);
         self.setMeshData(_data);
-        self.update_option_deep();
+        self.$nextTick(() => {
+            self.update_option_deep();
+        });
       });
     },
     setMeshData(_data) {
-        this.mesh_json = {};
-        this.mesh_json['Body'] = {}
-        this.mesh_json['Body']['xyz'] = _data[0][0];
-        this.mesh_json['Body']['ijk'] = _data[0][1];
-        this.mesh_json['Neural'] = {}
-        this.mesh_json['Neural']['xyz'] = _data[1][0];
-        this.mesh_json['Neural']['ijk'] = _data[1][1];
-        this.mesh_json['Gut'] = {}
-        this.mesh_json['Gut']['xyz'] = _data[2][0];
-        this.mesh_json['Gut']['ijk'] = _data[2][1];
-        if(_data.length>3){
-            this.mesh_json['Pharynx'] = {}
-            this.mesh_json['Pharynx']['xyz'] = _data[3][0];
-            this.mesh_json['Pharynx']['ijk'] = _data[3][1];
+        if( _data[0].length < 1 )
+            return ;
+        this.mesh_json = {}
+        for(var i = 0 ; i< _data[0].length; i++){
+            var mesh = _data[0][i];
+            this.mesh_conf.names.push(mesh);
+            this.mesh_conf.legends.push(mesh+"_mesh");
+            this.mesh_json[mesh] = {}
+            var xyz =  _data[1][i];
+            var vectors = []
+            for( var j = 0 ; j < xyz.length; j++){
+                vectors.push([xyz[j][0]*this.box_scale,xyz[j][1]*this.box_scale, xyz[j][2]*this.box_scale] );
+            }
+            this.mesh_json[mesh]['xyz'] = vectors;
+            this.mesh_json[mesh]['ijk'] = _data[2][i];
         }
     },
     //-------------mesh managerment end -------------------//
@@ -1252,41 +1252,37 @@ data() {
           var series_list = [];
           var legend_show = {};
           for(var i = 0; i<this.mesh_conf.names.length; i++){
-            var curr_name = this.mesh_conf.names[i];
-            var curr_legend_name = this.mesh_conf.legends[i];
-            var curr_color = this.mesh_conf.colors[i];
-            var curr_opacity = 0.5; 
-            if ( this.mesh_json[curr_name]['xyz'].length == 0 ) 
-                continue;
-            //console.log('curr_legend_name');
-            legend_list.push(curr_legend_name);
-            if ( i == 0 ){
-                legend_show[curr_legend_name]=false;
-            }else {
-                legend_show[curr_legend_name]=true;
-            }
-            var one_series = {
-                name : curr_legend_name,
-                type : 'surface',
-                data: this.mesh_json[curr_name]['xyz'],
-                isMesh :true,
-                //zlevel: -10,
-                shading:'lambert',
-                dataShape:[2,3],
-                indices : this.mesh_json[curr_name]['ijk'],
-                color: curr_color,
-                borderWidth :1,
-                opacity:curr_opacity,
-                silent:true,
-            };
-            series_list.push(one_series);
+              var curr_name = this.mesh_conf.names[i];
+              var curr_legend_name = this.mesh_conf.legends[i];
+              var curr_color = this.mesh_conf.colors[i];
+              var curr_opacity = 0.5; 
+              if ( this.mesh_json[curr_name]['xyz'].length == 0 ) 
+                  continue;
+              //console.log('curr_legend_name');
+              legend_list.push(curr_legend_name);
+              legend_show[curr_legend_name]=true;
+              var one_series = {
+                  name : curr_legend_name,
+                  type : 'surface',
+                  data: this.mesh_json[curr_name]['xyz'],
+                  isMesh :true,
+                  shading:'lambert',
+                  dataShape:[2,3],
+                  indices : this.mesh_json[curr_name]['ijk'],
+                  color: curr_color,
+                  borderWidth :1,
+                  opacity:curr_opacity,
+                  silent:true,
+              };
+              series_list.push(one_series);
           }
           var ret = {
               series_list: series_list,
               legend_list : legend_list,
               legend_show:legend_show,
           };
-          return ret ;
+          //console.log(ret)
+          return ret;
         } else {
           return null;
         }

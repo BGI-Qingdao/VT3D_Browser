@@ -52,9 +52,9 @@ export default {
             this.atlas['main_url'] = this.input_url;
             this.atlas['summary_url'] = this.input_url + '/summary.json';
             this.atlas['gene_url'] = this.input_url + '/gene.json';
+            this.atlas['meshes_url'] = this.input_url + '/meshes.json';
             this.atlas['anno_url'] = this.input_url + '/Anno';
             this.atlas['genes_url'] = this.input_url + '/Gene';
-            this.atlas['mesh_url'] = this.input_url + '/Mesh';
         },
         InitSummary(jsondata){
             this.atlas['summary'] = jsondata;
