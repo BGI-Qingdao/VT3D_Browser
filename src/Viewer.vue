@@ -168,7 +168,7 @@
                                     </el-col>
                                 </el-row>
                                 <el-row style="margin-top:3px;margin-bottom:2px">
-                                        <el-pagination layout="prev,jumper,next"
+                                        <el-pagination layout="total, prev,jumper,next"
                                             :total="this.tableData.length"
                                             :page-size="pageSize" 
                                             :current-page.sync="currentGenePage">
@@ -294,12 +294,26 @@
                                         <el-button @click="showMeshColorPalette">color</el-button>
                                       </el-table-column>
                                   </el-table>
-                                  <el-pagination layout="prev, jumper, next" 
+                                  <el-pagination layout="total, prev, jumper, next" 
                                    :total="this.tableDataMeshes.length" 
                                    :page-size="pageSize" 
                                    :current-page.sync="currentMeshPage">
                                   </el-pagination>
                               </el-row>
+                             <!-- start of buttons -->
+                             <hr class='dhr'>
+                             <el-row style="margin-top:3px;margin-bottom:2px">
+                                <el-col :span="8" >
+                                    <el-button type='success' @click="applyMeshStatus">Apply</el-button>
+                                </el-col>
+                                <el-col :span="8" >
+                                    <el-button type='warning' @click='clearMeshSelect'>Clear</el-button>
+                                </el-col>
+                                <el-col :span="8" >
+                                    <el-button type='primary' @click='resetMeshSelect'>Reset</el-button>
+                                </el-col>
+                             </el-row>
+                             <!-- end of buttons -->
                           </div>
                       </el-collapse-item>
                       <el-collapse-item title="ROI details:" name="3">
@@ -470,6 +484,7 @@
         <!-- main window -->
         <div ref="main"  style="border: 3px solid #eee;">
           <!-- I. chart content -->
+          <p tyle="color:red;font-size:30px;">Tip01: Use scroll to zoom. Tip02: Click scroll and hold to drag. Tip03: Left-click and hold to rotate. </p>
           <v-chart v-show="model_only" class="chart" resizeable=true :width="chartWidth"  ref="myecharts_model" :option="option_mo" />
           <v-chart v-show="data_valid" class="chart" resizeable=true :width="chartWidth"  ref="myecharts" :option="option"  />
         </div>
@@ -551,15 +566,17 @@ data() {
       tableDataClusters: [],
       currentPage:1,
       saved_clusters:[], // the selection cache
-
+      currentCellID: '',
       drawer:false,
       //------------cell type table end------
 
       //------------mesh type table begin ------
       tableDataMeshes:[],
       currentMeshPage:1,
+      currentMeshID: '',
       saved_meshes:[],
       drawer_mesh:false,
+      saved_meshes : [],
       //------------mesh type table end------
 
       //------------gene expression selection start------
@@ -623,7 +640,7 @@ data() {
       mesh_conf : {
         names:    [],
         legends : [],
-        colors :  this.COLOR_mesh,
+        colors :  [],
       },
       //------------model data : mesh begin ------
 
@@ -633,7 +650,6 @@ data() {
       COLOR_ALL2: COLOR_default,
       COLOR_mesh: COLOR_mesh,
       current_color_all: null,
-      currentCellID: '',
       color: '',
       //------------color legends confs end------
 
@@ -753,8 +769,9 @@ data() {
         var zlen = box['zmax'] - box['zmin'] +1
         var max_length = Math.max(xlen,ylen,zlen);
         this.box_scale = 1;
-        if( this.max_length > 300 ) this.box_scale = 1.0/max_length*300;
-        if( this.max_length < 100 ) this.box_scale = 1.0/max_length*100
+        if( max_length > 300.0 ) this.box_scale = 1.0/max_length*300;
+        if( max_length < 100.0 ) this.box_scale = 1.0/max_length*100;
+        console.log(this.box_scale);
     },
     InitAtlas() {
         // Init the celltype setting panel
@@ -900,11 +917,11 @@ data() {
      this.color = val.hex;
     },
     applyColor(){
-      // change color when click row
-      // only apply changes when click button
+      console.log(this.currentCellID)
       this.current_color_all = this.COLOR_ALL2;
       this.current_color_all[this.currentCellID] = this.color;
-      this.option=this.getOption()  ;
+      this.option=this.getOption();
+      this.drawer = false;
     },
     closeColor(){
       this.drawer = false;
@@ -920,25 +937,32 @@ data() {
     getMeshKey(row) {
         return row.Meshtype;
     },
-    handleMeshSelectionChange(val) {
-        return null;
-    },
-    showColorPalette() {
-      this.drawer_mesh = true; 
-    },
     closeMeshColor() {
       this.drawer_mesh = false;
     },
-    applyColor() {
-      // change color when click row
-      // only apply changes when click button
+    applyMeshColor() {
+      console.log(this.currentMeshID)
       this.current_color_all = this.COLOR_mesh;
       this.current_color_all[this.currentMeshID] = this.color;
       this.option=this.getOption() ;
+      this.drawer_mesh = false;
     },
     OnDrawerMeshClose(done) {
         this.drawer_mesh = false;
         done();
+    },
+    handleMeshSelectionChange(val) {
+      // change color when check box
+      // 2. get row id when use click selection box
+      if (val.length > 0){
+        this.currentMeshID = val[val.length -1].ID;
+      }
+      // save cluster highlight status in an array
+      var tmp_clusters= new Array(this.tableDataMeshes.length).fill(0);
+      for( var i = 0 ; i < val.length ; i++) {
+          tmp_clusters[val[i].ID]=1;
+      }
+      this.saved_meshes =tmp_clusters;
     },
     // ------------------ functions for cell type table begin -----------------
     OnDrawerClose(done){
@@ -1146,6 +1170,7 @@ data() {
       this.mesh_json = null;
       this.mesh_conf.names = [];
       this.mesh_conf.legends = [];
+      this.mesh_conf.colors = this.COLOR_mesh;
     },
     resetMesh() {
       this.cleanMesh();
