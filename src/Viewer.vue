@@ -2,7 +2,7 @@
 <div>
     <!---------------------------- All floating items begin --------------------------------------------------- -->
     <div  style="height=1px;">
-      <el-dialog title="Color picker" style="width:500px;" :visible.sync="drawer" direction="ltr" :before-close="OnDrawerClose">
+      <el-dialog title="celltype color" style="width:500px;" :visible.sync="drawer" direction="ltr" :before-close="OnDrawerClose">
           <div>
               <hr>
               <!-- start of color palette -->
@@ -19,6 +19,25 @@
               </div>
               <!-- end of color palette -->
           </div> 
+          <!-- end of dialog div -->
+      </el-dialog>
+      <el-dialog title="mesh color" style="width:500px;" :visible.sync="drawer_mesh" direction="ltr" :before-close="OnDrawerMeshClose">
+          <div>
+              <hr>
+              <!-- start of color palette -->
+              <div style='width:100%;height:400px;'>
+                <sketch-picker align='center' v-model="color" @input="colorValueChange"></sketch-picker>
+                <el-row style="margin-top:3px;margin-bottom:2px">
+                    <el-col :span="12" >
+                        <el-button type='success' @click='applyMeshColor'>Apply</el-button>
+                    </el-col>
+                    <el-col :span="12" >
+                        <el-button type='info' @click='closeMeshColor'>Close</el-button>
+                    </el-col>
+                </el-row>
+              </div>
+              <!-- end of color palette -->
+          </div>
           <!-- end of dialog div -->
       </el-dialog>
     </div>
@@ -80,7 +99,8 @@
                                 <el-table class="table" ref="clusterTable" style="width:100%;" :show-header='false'
                                   :height='height' :row-key="getRowKey" :highlight-current-row='true'
                                   :data="tableDataClusters.slice((currentPage-1)*pageSize,currentPage*pageSize)"
-                                  @selection-change="handleSelectionChange" >
+                                  @selection-change="handleSelectionChange"
+                                  @row-click="getRowCelltype" >
                                     <el-table-column :reserve-selection="true" type="selection" ></el-table-column>
                                     <el-table-column property="Celltype" label="Cell Type" > </el-table-column>
                                     <el-table-column label="Display" >
@@ -266,11 +286,12 @@
                                   <el-table class="table" ref="meshTable" style="width:100%;" :show-header='false'
                                     :height='height' :row-key="getMeshKey" :highlight-current-row='true'
                                     :data="tableDataMeshes.slice((currentMeshPage-1)*pageSize,currentMeshPage*pageSize)"
-                                    @selection-change="handleMeshSelectionChange" >
+                                    @selection-change="handleMeshSelectionChange"
+                                    @row-click="getRowMeshtype" >
                                       <el-table-column :reserve-selection="true" type="selection" ></el-table-column>
                                       <el-table-column property="Meshtype" label="Mesh Type" > </el-table-column>
                                       <el-table-column label="Display" >
-                                        <el-button @click="showColorPalette">color</el-button>
+                                        <el-button @click="showMeshColorPalette">color</el-button>
                                       </el-table-column>
                                   </el-table>
                                   <el-pagination layout="prev, jumper, next" 
@@ -533,10 +554,12 @@ data() {
 
       drawer:false,
       //------------cell type table end------
+
+      //------------mesh type table begin ------
       tableDataMeshes:[],
       currentMeshPage:1,
       saved_meshes:[],
-      //------------mesh type table begin ------
+      drawer_mesh:false,
       //------------mesh type table end------
 
       //------------gene expression selection start------
@@ -600,7 +623,7 @@ data() {
       mesh_conf : {
         names:    [],
         legends : [],
-        colors :  COLOR_mesh,
+        colors :  this.COLOR_mesh,
       },
       //------------model data : mesh begin ------
 
@@ -608,6 +631,7 @@ data() {
       // test color 
       COLOR_default :COLOR_default,
       COLOR_ALL2: COLOR_default,
+      COLOR_mesh: COLOR_mesh,
       current_color_all: null,
       currentCellID: '',
       color: '',
@@ -728,8 +752,9 @@ data() {
         var ylen = box['ymax'] - box['ymin'] +1
         var zlen = box['zmax'] - box['zmin'] +1
         var max_length = Math.max(xlen,ylen,zlen);
-        this.box_scale = 1.0/max_length*300;
-        if ( this.box_scale > 1 ) this.box_scale = 1;
+        this.box_scale = 1;
+        if( this.max_length > 300 ) this.box_scale = 1.0/max_length*300;
+        if( this.max_length < 100 ) this.box_scale = 1.0/max_length*100
     },
     InitAtlas() {
         // Init the celltype setting panel
@@ -865,6 +890,9 @@ data() {
     //----------- gene select functions end -------------//
 
     //----------- color palette start -------------//
+    getRowCelltype(row){
+      this.currentCellID = row.ID;
+    },
     showColorPalette(){
       this.drawer = true; 
     },
@@ -883,11 +911,34 @@ data() {
     },
     //-------------color palette ends------------------//
     // ------------------ functions for mesh begin -----------------
+    showMeshColorPalette(){
+      this.drawer_mesh = true; 
+    },
+    getRowMeshtype(row){
+      this.currentMeshID = row.ID;
+    },
     getMeshKey(row) {
         return row.Meshtype;
     },
     handleMeshSelectionChange(val) {
         return null;
+    },
+    showColorPalette() {
+      this.drawer_mesh = true; 
+    },
+    closeMeshColor() {
+      this.drawer_mesh = false;
+    },
+    applyColor() {
+      // change color when click row
+      // only apply changes when click button
+      this.current_color_all = this.COLOR_mesh;
+      this.current_color_all[this.currentMeshID] = this.color;
+      this.option=this.getOption() ;
+    },
+    OnDrawerMeshClose(done) {
+        this.drawer_mesh = false;
+        done();
     },
     // ------------------ functions for cell type table begin -----------------
     OnDrawerClose(done){

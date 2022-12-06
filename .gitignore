@@ -4,6 +4,6 @@ dist/
 npm-debug.log
 .idea
 webpack.config.js
-package.json
 package-lock.json
 yarn.lock
+package.json
