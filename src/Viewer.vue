@@ -80,7 +80,7 @@
                                 <el-table class="table" ref="clusterTable" style="width:100%;" :show-header='false'
                                   :height='height' :row-key="getRowKey" :highlight-current-row='true'
                                   :data="tableDataClusters.slice((currentPage-1)*pageSize,currentPage*pageSize)"
-                                  @selection-change="handleSelectionChange" @row-click="getRowCelltype">
+                                  @selection-change="handleSelectionChange" >
                                     <el-table-column :reserve-selection="true" type="selection" ></el-table-column>
                                     <el-table-column property="Celltype" label="Cell Type" > </el-table-column>
                                     <el-table-column label="Display" >
@@ -88,11 +88,15 @@
                                     </el-table-column>
                                 </el-table>
                                 <el-pagination layout="total,sizes" 
-                                  :total="this.tableDataClusters.length" :current-page="currentPage" 
-                                  @current-change="handleCurrentChange" @size-change="handleSizeChange" >
+                                  :total="this.tableDataClusters.length" 
+                                  :page-size="pageSize"
+                                  :page-sizes="[5,10,20,30]"
+                                  @size-change="handleSizeChange" >
                                 </el-pagination>
-                                <el-pagination layout="prev, jumper, next" 
-                                  :page-sizes="[10,20]" :page-size="pageSize" :current-page.sync="currentPage">
+                                <el-pagination layout="prev, jumper, next"
+                                  :total="this.tableDataClusters.length" 
+                                  :page-size="pageSize" 
+                                  :current-page.sync="currentPage">
                                 </el-pagination>
                             </el-row>
                             <!-- 1. cell table content end-->
@@ -134,7 +138,7 @@
                                         <!-- 2022-10-10 add gene table -->
                                         <el-table ref="geneTable" 
                                         :show-header='true' class="table"
-                                        :data="tableData.slice((currentPage-1)*pageSize,currentPage*pageSize)"
+                                        :data="tableData.slice((currentGenePage-1)*pageSize,currentGenePage*pageSize)"
                                         :highlight-current-row='true'
                                         stripe
                                         @row-dblclick='handleRow'>
@@ -144,11 +148,10 @@
                                     </el-col>
                                 </el-row>
                                 <el-row style="margin-top:3px;margin-bottom:2px">
-                                        <el-pagination layout="total,prev,next,jumper"
-                                        :total="this.tableData.length"
-                                        :current-page="currentPage"
-                                        @current-change="handleCurrentChange" @size-change="handleSizeChange"
-                                        :page-sizes="[3,5,10]" :page-size="pageSize" :current-page.sync="currentPage">
+                                        <el-pagination layout="prev,jumper,next"
+                                            :total="this.tableData.length"
+                                            :page-size="pageSize" 
+                                            :current-page.sync="currentGenePage">
                                         </el-pagination>
                                 </el-row>
                             </div>
@@ -246,7 +249,39 @@
                          <!-- ----------digital in situ mode end--------------------------------------------------------------- -->
                       <!-- ----------mode setting end --------------------------------------------------------------- -->
                       </el-collapse-item>
-                      <el-collapse-item title="ROI details:" name="2">
+                      <el-collapse-item title="Mesh setting:" name="2">
+                          <div align="center"   style="margin:3px;  border: 3px solid #ccc;">
+                              <el-row style="margin:3px;">
+                                  <el-col :span="8" >
+                                     <span  class='mspan'>MeshAlpha</span>
+                                  </el-col>
+                                  <el-col :span="15" >
+                                      <el-slider  v-model="mesh_alpha"
+                                        :step="0.1" :min="0.0" :max="1" @change="refresh" show-stops>
+                                      </el-slider>
+                                  </el-col>
+                              </el-row>
+                              <el-row style="margin-top:3px;margin-bottom:2px">
+                                  <!-- 1. cell table content -->
+                                  <el-table class="table" ref="meshTable" style="width:100%;" :show-header='false'
+                                    :height='height' :row-key="getMeshKey" :highlight-current-row='true'
+                                    :data="tableDataMeshes.slice((currentMeshPage-1)*pageSize,currentMeshPage*pageSize)"
+                                    @selection-change="handleMeshSelectionChange" >
+                                      <el-table-column :reserve-selection="true" type="selection" ></el-table-column>
+                                      <el-table-column property="Meshtype" label="Mesh Type" > </el-table-column>
+                                      <el-table-column label="Display" >
+                                        <el-button @click="showColorPalette">color</el-button>
+                                      </el-table-column>
+                                  </el-table>
+                                  <el-pagination layout="prev, jumper, next" 
+                                   :total="this.tableDataMeshes.length" 
+                                   :page-size="pageSize" 
+                                   :current-page.sync="currentMeshPage">
+                                  </el-pagination>
+                              </el-row>
+                          </div>
+                      </el-collapse-item>
+                      <el-collapse-item title="ROI details:" name="3">
                          <!-- ----------roi setting begin --------------------------------------------------------------- -->
                           <div align="center"   style="margin:3px;  border: 3px solid #ccc;">
                               <el-row style="margin-top:3px;margin-bottom:2px">
@@ -335,9 +370,21 @@
                           </div>
                          <!-- ----------roi setting end--------------------------------------------------------------- -->
                       </el-collapse-item>
-                      <el-collapse-item title="Display details:" name="3">
+                      <el-collapse-item title="Display details:" name="4">
                           <!-- ----------display setting begin --------------------------------------------------------------- -->
                           <div align="center"  style="margin:3px;  border: 3px solid #ccc;">
+                              <!-- light intensive start -->
+                              <el-row style="margin:3px;">
+                                  <el-col :span="8" >
+                                     <span  class='mspan'>LightIntensity</span>
+                                  </el-col>
+                                  <el-col :span="15" >
+                                      <el-slider  v-model="light_intensity"
+                                         :step="0.5" :min="0" :max="5" @change="refresh" show-stops>
+                                      </el-slider>
+                                  </el-col>
+                              </el-row>
+                              <!-- light internsive end -->
                               <!-- switch background start -->
                               <el-row style="margin:3px;">
                                   <el-switch  active-text="Black theme" inactive-text="White theme"
@@ -476,21 +523,27 @@ data() {
       jsondata : null,
       //------------data selection for cell type end ------
 
+      // global page-size for all tables
+      pageSize: 5,
+      height:'250px',
       //------------cell type table begin ------
       tableDataClusters: [],
-      height:'250px',
-      pageSize:5,
       currentPage:1,
-      min_cluster_number: 0,
-      max_cluster_number: 100,
-      drawer:false,
       saved_clusters:[], // the selection cache
+
+      drawer:false,
       //------------cell type table end------
+      tableDataMeshes:[],
+      currentMeshPage:1,
+      saved_meshes:[],
+      //------------mesh type table begin ------
+      //------------mesh type table end------
 
       //------------gene expression selection start------
       // 2022-10-10, gene table data
       allTableData: [],
       tableData: [],
+      currentGenePage:1,
       // end
       input_gene_id : '',
       curr_gene : "",
@@ -543,6 +596,7 @@ data() {
 
       //------------model data : mesh begin ------
       mesh_json : null,
+      mesh_alpha: 0.5,
       mesh_conf : {
         names:    [],
         legends : [],
@@ -584,6 +638,7 @@ data() {
       adjusted_posture:true,
       symbolSize:2,
       symbolAlpha:1.0,
+      light_intensity:2.0,
       // drawing details conf end----------
       // echarts option begin -------------
       chartWidth:'100%',
@@ -673,7 +728,7 @@ data() {
         var ylen = box['ymax'] - box['ymin'] +1
         var zlen = box['zmax'] - box['zmin'] +1
         var max_length = Math.max(xlen,ylen,zlen);
-        this.box_scale = 1.0/max_length*500;
+        this.box_scale = 1.0/max_length*300;
         if ( this.box_scale > 1 ) this.box_scale = 1;
     },
     InitAtlas() {
@@ -695,8 +750,8 @@ data() {
         var summary = this.G_Atlas['summary'];
         var tempkey = this.curr_anno+'_legend2int';
         var mapper = summary['annomapper'][tempkey]
-        var new_tableDataClusters = []
         var legend_num = 0;
+        var new_tableDataClusters = []
         for (var key in mapper) {
             new_tableDataClusters.push({ID: mapper[key], Celltype:key });
             legend_num = legend_num + 1;
@@ -827,18 +882,19 @@ data() {
       this.drawer = false;
     },
     //-------------color palette ends------------------//
+    // ------------------ functions for mesh begin -----------------
+    getMeshKey(row) {
+        return row.Meshtype;
+    },
+    handleMeshSelectionChange(val) {
+        return null;
+    },
     // ------------------ functions for cell type table begin -----------------
     OnDrawerClose(done){
         this.drawer= false;
         done();
     },
-    getRowCelltype(row){
-      // 1. get row id when click on row (except for selection box)
-      this.currentCellID = row.ID;
-      console.log('getrow '+this.currentCellID);
-      return row.ID;
-    },
-    getRowKey (row) {
+    getRowKey(row) {
       return row.Celltype
     },
     handleSizeChange (size) {
@@ -1057,9 +1113,11 @@ data() {
     setMeshData(_data) {
         if( _data[0].length < 1 )
             return ;
+        var new_tableDataMeshes = []
         this.mesh_json = {}
         for(var i = 0 ; i< _data[0].length; i++){
             var mesh = _data[0][i];
+            new_tableDataMeshes.push({ID: i, Meshtype:mesh});
             this.mesh_conf.names.push(mesh);
             this.mesh_conf.legends.push(mesh+"_mesh");
             this.mesh_json[mesh] = {}
@@ -1071,6 +1129,7 @@ data() {
             this.mesh_json[mesh]['xyz'] = vectors;
             this.mesh_json[mesh]['ijk'] = _data[2][i];
         }
+        this.tableDataMeshes = new_tableDataMeshes;
     },
     //-------------mesh managerment end -------------------//
 
@@ -1255,7 +1314,6 @@ data() {
               var curr_name = this.mesh_conf.names[i];
               var curr_legend_name = this.mesh_conf.legends[i];
               var curr_color = this.mesh_conf.colors[i];
-              var curr_opacity = 0.5; 
               if ( this.mesh_json[curr_name]['xyz'].length == 0 ) 
                   continue;
               //console.log('curr_legend_name');
@@ -1271,7 +1329,7 @@ data() {
                   indices : this.mesh_json[curr_name]['ijk'],
                   color: curr_color,
                   borderWidth :1,
-                  opacity:curr_opacity,
+                  opacity:this.mesh_alpha,
                   silent:true,
               };
               series_list.push(one_series);
@@ -1570,28 +1628,33 @@ data() {
             }
           },
           toolbox: {
-            show: true,
-            feature: {
-              saveAsImage: {},
-            }
+             show: true,
+             feature: {
+                 restore : {},
+                 saveAsImage: {},
+             },
+             iconStyle: {
+                 borderColor: '#fff',
+                 borderWidth : 2,
+             },
           },
           tooltip: {},
           xAxis3D: {
-            name: 'AP',
+            name: 'x',
             scale:1,
             type: 'value',
             min: used_xmin,
             max: used_xmax,
           },
           yAxis3D: {
-            name: 'ML',
+            name: 'y',
             scale:1,
             type: 'value',
             min: used_ymin,
             max: used_ymax,
           },
           zAxis3D: {
-            name: 'DV',
+            name: 'z',
             scale:1,
             type: 'value',
             min: used_zmin,
@@ -1605,12 +1668,14 @@ data() {
             light: {
               main: {
                  shadow: false,
-                 intensity: 3,
+                 intensity: this.light_intensity,
                  quality: 'high'
               },
-              ambientCubemap: {
-                 exposure: 0,
-                 diffuseIntensity: 10
+              ambient:{
+                 intensity: this.light_intensity,
+              },
+              ambientCubemap:{
+                 intensity: this.light_intensity,
               },
             },
             axisLine: {
@@ -1668,7 +1733,7 @@ data() {
   vertical-align: middle;
 }
 .chart {
-  height: 800px;
+  height: 1000px;
 }
 .parent {
   position: relative;

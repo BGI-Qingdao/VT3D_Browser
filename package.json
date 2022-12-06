@@ -19,7 +19,7 @@
     "vue-draggable-resizable-gorkys": "^2.4.8",
     "vue-echarts": "^6.0.2",
     "vuedraggable": "^2.24.3",
-    "yarn": "^1.22.17"
+    "yarn": "^1.22.19"
   },
   "engines": {
     "node": ">=6"
