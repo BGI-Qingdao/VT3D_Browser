@@ -468,7 +468,7 @@
                                   </el-col>
                                   <el-col :span="15" >
                                       <el-slider  v-model="symbolSize"
-                                         :step="1" :min="1" :max="5" @change="refresh" show-stops>
+                                         :step="1" :min="1" :max="10" @change="refresh" show-stops>
                                       </el-slider>
                                   </el-col>
                               </el-row>
@@ -608,7 +608,7 @@ data() {
       curr_gene : "",
       gene_json_raw : null,
       gene_json_data : null,
-      curr_max_exp:6,
+      curr_max_exp:2,
       fish_url:null,
       //------------gene expression selection end------
 
@@ -642,13 +642,13 @@ data() {
       },
       channel_keys : ["red",    "green",   "blue",   "gray",   "cyan",   "magenta", "yellow"],
       channel_colors : {
-          red:"#ff0000",
-          green:"#00ff00",
-          blue:"#0000ff",
-          gray:"#888888",
-          cyan:"#00ffff",
-          magenta:"#ff00fff",
-          yellow:"#ffff00"
+          red    :"#ff0000",
+          green  :"#00ff00",
+          blue   :"#0000ff",
+          gray   :"#888888",
+          cyan   :"#00ffff",
+          magenta:"#ff00ff",
+          yellow :"#ffff00"
       },
       min_cutoff : 3,
       //------------channel selection end------
@@ -1468,7 +1468,7 @@ data() {
         var one_series = {
             name : this.curr_gene,
             type : 'scatter3D',
-            dimensions: [ 'AP','ML','DV' ,'exp'],
+            dimensions: [ 'x','y','z' ,'exp'],
             data: this.gene_json_data,
             symbolSize: this.symbolSize,
             symbolAlpha: this.symbolAlpha,
