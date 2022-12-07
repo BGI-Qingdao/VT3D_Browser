@@ -407,7 +407,21 @@
                       </el-collapse-item>
                       <el-collapse-item title="Display details:" name="4">
                           <!-- ----------display setting begin --------------------------------------------------------------- -->
-                          <div align="center"  style="margin:3px;  border: 3px solid #ccc;">
+                          <div align="center" style="margin:3px;  border: 3px solid #ccc;">
+                              <!-- animation start -->
+                              <el-row style="margin:3px;">
+                                  <el-switch  active-text="Animation On" inactive-text="Animation Off"
+                                    v-model="animation" @change="refresh" >
+                                  </el-switch>
+                              </el-row>
+                              <!-- animation end -->
+                              <!-- projection start -->
+                              <el-row style="margin:3px;">
+                                  <el-switch  active-text="Perspective" inactive-text="Orthographic"
+                                    v-model="projection" @change="refresh" >
+                                  </el-switch>
+                              </el-row>
+                              <!-- animation end -->
                               <!-- light intensive start -->
                               <el-row style="margin:3px;">
                                   <el-col :span="8" >
@@ -484,9 +498,14 @@
         <!-- main window -->
         <div ref="main"  style="border: 3px solid #eee;">
           <!-- I. chart content -->
-          <p tyle="color:red;font-size:30px;">Tip01: Use scroll to zoom. Tip02: Click scroll and hold to drag. Tip03: Left-click and hold to rotate. </p>
           <v-chart v-show="model_only" class="chart" resizeable=true :width="chartWidth"  ref="myecharts_model" :option="option_mo" />
           <v-chart v-show="data_valid" class="chart" resizeable=true :width="chartWidth"  ref="myecharts" :option="option"  />
+          <div  align='center' style="margin:3px; border: 3px solid #ffffff; " >
+              <p tyle="color:red;font-size:40px;">Tip01: Use scroll to zoom.</p>
+              <p tyle="color:red;font-size:40px;">Tip02: Click scroll and hold to drag.</p>
+              <p tyle="color:red;font-size:40px;">Tip03: Left-click and hold to rotate.</p>
+              <p tyle="color:white;font-size:40px;">Info01: to achive better visualization effect, unit 1 represent {{box_scale}} in data.</p>
+          </div>
         </div>
         <!-- end of the main window -->
       </el-col>
@@ -576,7 +595,7 @@ data() {
       currentMeshID: '',
       saved_meshes:[],
       drawer_mesh:false,
-      saved_meshes : [],
+      final_meshes: [],
       //------------mesh type table end------
 
       //------------gene expression selection start------
@@ -671,6 +690,8 @@ data() {
       z_max:300,
       //------------roi confs end------
       // drawing details conf start ----------
+      animation:false,
+      projection:true,
       black_background:true,
       draw_legends:true,
       draw_grids:false,
@@ -735,8 +756,8 @@ data() {
     // ------------------ resize page end----------------------
     // ------------------ basic conf functions begin----------------------
     OnChangeMode(){
-        this.update_option_deep();
         this.mode_title = this.curr_mode+" setting";
+        this.update_option_deep();
         console.log(this.curr_mode)
         if( this.curr_mode == "CellTypes") {
             this.is_ct_mode = true;
@@ -746,7 +767,7 @@ data() {
             this.anno_array = this.G_Atlas['summary']['annokeys'];
             this.curr_anno = this.anno_array[0];
             var tempkey = this.curr_anno+'_int2legend';
-            this.curr_legends = this.G_Atlas['summary']['annomapper'][tempkey]
+            this.curr_legends = this.G_Atlas['summary']['annomapper'][tempkey];
             this.OnChangeAnno();
         }else if ( this.curr_mode == "GeneExpression" ) {
             this.is_ct_mode = false;
@@ -906,28 +927,8 @@ data() {
     },
     //----------- gene select functions end -------------//
 
-    //----------- color palette start -------------//
-    getRowCelltype(row){
-      this.currentCellID = row.ID;
-    },
-    showColorPalette(){
-      this.drawer = true; 
-    },
-    colorValueChange (val) {
-     this.color = val.hex;
-    },
-    applyColor(){
-      console.log(this.currentCellID)
-      this.current_color_all = this.COLOR_ALL2;
-      this.current_color_all[this.currentCellID] = this.color;
-      this.option=this.getOption();
-      this.drawer = false;
-    },
-    closeColor(){
-      this.drawer = false;
-    },
-    //-------------color palette ends------------------//
-    // ------------------ functions for mesh begin -----------------
+
+    // ------------------ functions for mesh table begin -----------------
     showMeshColorPalette(){
       this.drawer_mesh = true; 
     },
@@ -963,7 +964,22 @@ data() {
           tmp_clusters[val[i].ID]=1;
       }
       this.saved_meshes =tmp_clusters;
+      console.log(this.saved_meshes)
     },
+    resetMeshSelect(){
+      this.final_meshes=new Array(this.tableDataMeshes.length).fill(1);
+      this.update_option();
+    },
+    clearMeshSelect() {
+      this.currentMeshID = '';
+      this.$refs.meshTable.clearSelection();
+    },
+    applyMeshStatus() {
+      this.final_meshes =this.saved_meshes;
+      this.update_option();
+    },
+    // ------------------ functions for mesh table end -----------------
+
     // ------------------ functions for cell type table begin -----------------
     OnDrawerClose(done){
         this.drawer= false;
@@ -980,14 +996,13 @@ data() {
     },
     resetSelect(){
       this.final_clusters=new Array(this.all_clusters).fill(1);
-      this.option=this.getOption();
+      this.update_option();
     },
     clearSelect () {
       this.currentCellID = '';
       this.$refs.clusterTable.clearSelection();
     },
     applyStatus() {
-      var self = this;
       this.final_clusters=this.saved_clusters;
       this.update_option();
     },
@@ -1004,6 +1019,27 @@ data() {
       }
       this.saved_clusters=tmp_clusters;
     },
+    //----------- color palette of cell type start -------------//
+    getRowCelltype(row){
+      this.currentCellID = row.ID;
+    },
+    showColorPalette(){
+      this.drawer = true; 
+    },
+    colorValueChange (val) {
+     this.color = val.hex;
+    },
+    applyColor(){
+      console.log(this.currentCellID)
+      this.current_color_all = this.COLOR_ALL2;
+      this.current_color_all[this.currentCellID] = this.color;
+      this.option=this.getOption();
+      this.drawer = false;
+    },
+    closeColor(){
+      this.drawer = false;
+    },
+    //-------------color palette of celltype ends------------------//
     // ------------------ functions for cell type table end -----------------
 
     // ------------------ functions for update echarts begin -----------------
@@ -1206,6 +1242,7 @@ data() {
             this.mesh_json[mesh]['ijk'] = _data[2][i];
         }
         this.tableDataMeshes = new_tableDataMeshes;
+        this.final_meshes=new Array(this.tableDataMeshes.length).fill(1);
     },
     //-------------mesh managerment end -------------------//
 
@@ -1394,7 +1431,10 @@ data() {
                   continue;
               //console.log('curr_legend_name');
               legend_list.push(curr_legend_name);
-              legend_show[curr_legend_name]=true;
+              if(this.final_meshes[i] == 1 )
+                  legend_show[curr_legend_name]=true;
+              else
+                  legend_show[curr_legend_name]=false;
               var one_series = {
                   name : curr_legend_name,
                   type : 'surface',
@@ -1684,6 +1724,12 @@ data() {
         if(box_series!= null){
             series_list.push(box_series)
         }
+        var curr_projection = '';
+        if(this.projection )
+            curr_projection = 'perspective';
+        else
+            curr_projection = 'orthographic';
+
         var opt={
           backgroundColor:bk_color,
           title :{
@@ -1765,9 +1811,8 @@ data() {
               }
             },
           viewControl: {
-              // autoRotate: true,
-              //projection: 'orthographic'
-              projection: 'perspective',
+              projection: curr_projection,
+              autoRotate: this.animation,
             }
           },
           series: series_list
