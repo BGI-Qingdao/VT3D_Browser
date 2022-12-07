@@ -1813,6 +1813,13 @@ data() {
           viewControl: {
               projection: curr_projection,
               autoRotate: this.animation,
+              minDistance: 1,
+              distance: 200 / this.box_scale,
+              maxDistance: 2000,
+              minAlpha:-3600,
+              maxAlpha:3600,
+              minBeta:-3600,
+              maxBeta:3600,
             }
           },
           series: series_list
