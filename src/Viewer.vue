@@ -501,10 +501,8 @@
           <v-chart v-show="model_only" class="chart" resizeable=true :width="chartWidth"  ref="myecharts_model" :option="option_mo" />
           <v-chart v-show="data_valid" class="chart" resizeable=true :width="chartWidth"  ref="myecharts" :option="option"  />
           <div  align='center' style="margin:3px; border: 3px solid #ffffff; " >
-              <p tyle="color:red;font-size:40px;">Tip01: Use scroll to zoom.</p>
-              <p tyle="color:red;font-size:40px;">Tip02: Click scroll and hold to drag.</p>
-              <p tyle="color:red;font-size:40px;">Tip03: Left-click and hold to rotate.</p>
-              <p tyle="color:white;font-size:40px;">Info01: to achive better visualization effect, unit 1 represent {{box_scale}} in data.</p>
+              <p tyle="color:red;font-size:40px;">Tip01: Use scroll to zoom. Tip02: Click scroll and hold to drag. Tip03: Left-click and hold to rotate.</p>
+              <p tyle="color:white;font-size:40px;">Info01: to achive better visualization effect, unit 1 represent {{unit1}} in data.</p>
           </div>
         </div>
         <!-- end of the main window -->
@@ -566,6 +564,7 @@ data() {
       is_ge_mode: false,
       is_gc_mode: false,
       box_scale: 0,
+      unit1 :1,
       // working mode end ----------------------------------------
 
       //------------data selection for cell type begin ------
@@ -793,6 +792,7 @@ data() {
         if( max_length > 300.0 ) this.box_scale = 1.0/max_length*300;
         if( max_length < 100.0 ) this.box_scale = 1.0/max_length*100;
         console.log(this.box_scale);
+        this.unit1 = 1/this.box_scale;
     },
     InitAtlas() {
         // Init the celltype setting panel
@@ -1729,7 +1729,11 @@ data() {
             curr_projection = 'perspective';
         else
             curr_projection = 'orthographic';
-
+        var curr_distance = 200;
+        if(this.box_scale < 1 ) 
+            curr_distance = 400;
+        else 
+            curr_distance = 150;
         var opt={
           backgroundColor:bk_color,
           title :{
@@ -1814,7 +1818,7 @@ data() {
               projection: curr_projection,
               autoRotate: this.animation,
               minDistance: 1,
-              distance: 200 / this.box_scale,
+              distance: curr_distance,
               maxDistance: 2000,
               minAlpha:-3600,
               maxAlpha:3600,
