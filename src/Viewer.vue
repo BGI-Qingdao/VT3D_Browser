@@ -175,6 +175,30 @@
                                         </el-pagination>
                                 </el-row>
                             </div>
+                            <div>
+                              <el-row style="margin-top:3px;margin-bottom:2px">
+                                  <el-col :span="6" >
+                                     <span  class='mspan'>vmin:</span>
+                                  </el-col>
+                                  <el-col :span="8" >
+                                      <el-input v-model="tmp_vmin" placeholder="0"></el-input>
+                                  </el-col>
+                                  <el-col :span="10" >
+                                      <el-button type="success" @click.native="changeVmin">Apply</el-button>
+                                  </el-col>
+                              </el-row>
+                              <el-row style="margin-top:3px;margin-bottom:2px">
+                                  <el-col :span="6" >
+                                     <span  class='mspan'>vmax:</span>
+                                  </el-col>
+                                  <el-col :span="8" >
+                                      <el-input v-model="tmp_vmax" placeholder="0"></el-input>
+                                  </el-col>
+                                  <el-col :span="10" >
+                                      <el-button type="success" @click.native="changeVmax">Apply</el-button>
+                                  </el-col>
+                              </el-row>
+                             </div>
                          </div>
                          <!-- ----------gene selection mode start--------------------------------------------------------------- -->
                          <!-- ----------digital in situ mode start--------------------------------------------------------------- -->
@@ -607,6 +631,9 @@ data() {
       curr_gene : "",
       gene_json_raw : null,
       gene_json_data : null,
+      tmp_vmin:0,
+      tmp_vmax:0,
+      curr_min_exp:0,
       curr_max_exp:2,
       fish_url:null,
       //------------gene expression selection end------
@@ -915,6 +942,8 @@ data() {
     setGeneData(_data) {
         console.log('get gene json loaded');
         var gene_xyz= [];
+        this.curr_min_exp = 0;
+        this.curr_max_exp = 2;
         for(var j=0 ; j< _data.length; j++)
         {
             var curr_item = _data[j];
@@ -922,8 +951,18 @@ data() {
                 this.curr_max_exp = parseInt(curr_item[3])+1;
             gene_xyz.push( [curr_item[0]*this.box_scale,curr_item[1]*this.box_scale,curr_item[2]*this.box_scale,curr_item[3]]);
         }
+        this.tmp_vmin = this.curr_min_exp;
+        this.tmp_vmax = this.curr_max_exp;
         this.gene_json_raw= gene_xyz;
         this.updateJsonData();
+    },
+    changeVmin(){
+        this.curr_min_exp = this.tmp_vmin ;
+        this.update_option_deep();
+    },
+    changeVmax(){
+        this.curr_max_exp = this.tmp_vmax ;
+        this.update_option_deep();
     },
     //----------- gene select functions end -------------//
 
@@ -1068,27 +1107,27 @@ data() {
     //-------------3d box conf start-------------------//
     getXMin(){
         var summary = this.G_Atlas['summary'];
-        return summary['box']['xmin'] *this.box_scale;
+        return  parseInt(summary['box']['xmin']*this.box_scale)-1;
     },
     getXMax(){
         var summary = this.G_Atlas['summary'];
-        return summary['box']['xmax'] *this.box_scale;
+        return parseInt(summary['box']['xmax']*this.box_scale)+1;
     },
     getYMin(){
         var summary = this.G_Atlas['summary'];
-        return summary['box']['ymin'] *this.box_scale;
+        return parseInt(summary['box']['ymin'] *this.box_scale)-1;
     },
     getYMax(){
         var summary = this.G_Atlas['summary'];
-        return summary['box']['ymax'] *this.box_scale;
+        return parseInt(summary['box']['ymax'] *this.box_scale)+1;
     },
     getZMin(){
         var summary = this.G_Atlas['summary'];
-        return summary['box']['zmin'] *this.box_scale;
+        return parseInt(summary['box']['zmin'] *this.box_scale)-1;
     },
     getZMax(){
         var summary = this.G_Atlas['summary'];
-        return summary['box']['zmax'] *this.box_scale;
+        return parseInt(summary['box']['zmax'] *this.box_scale)+1;
     },
     getWidth(){
       return this.getXMax()-this.getXMin()+2;
@@ -1476,19 +1515,24 @@ data() {
               borderWidth: 0,
             },
         };
+        var color_range = ['blue', 'white', 'red'];
+        if ( this.black_background == false )
+            color_range = ['blue','yellow','red'];
         var visualMap= [
             {
                type: 'continuous',
-               min: 0,
+               min: this.curr_min_exp,
                max: this.curr_max_exp,
+               range:[ this.curr_min_exp,this.curr_max_exp],  
                dimension: 3, // the fourth dimension of series.data (i.e. value[3]) is mapped
                seriesIndex: 0, // The first series is mapped.
                orient: 'vertical',
                right: 5,
                top: 'center',
                calculable: true,
+               realtime:false,
                inRange: {
-                  color: ['blue', 'white', 'red'], // A list of colors that defines the graph color mapping
+                  color: color_range,
                },
                textStyle: {
                   color: '#cccccc'
