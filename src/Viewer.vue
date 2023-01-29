@@ -685,16 +685,13 @@ data() {
       mesh_conf : {
         names:    [],
         legends : [],
-        colors :  [],
       },
       //------------model data : mesh begin ------
 
       //------------color legends confs begin------
       // test color 
-      COLOR_default :COLOR_default,
       COLOR_ALL2: COLOR_default,
       COLOR_mesh: COLOR_mesh,
-      current_color_all: null,
       color: '',
       //------------color legends confs end------
 
@@ -885,7 +882,6 @@ data() {
     },
     OnChangeAnno(){
         this.cleanCellTypeBuffer();
-        this.COLOR_ALL2 = this.COLOR_default;
         this.InitAnnoTable();
         this.resetCellTypeScattters();
         this.update_option_deep();
@@ -982,8 +978,7 @@ data() {
     },
     applyMeshColor() {
       console.log(this.currentMeshID)
-      this.current_color_all = this.COLOR_mesh;
-      this.current_color_all[this.currentMeshID] = this.color;
+      this.COLOR_mesh[this.currentMeshID] = this.color;
       this.option=this.getOption() ;
       this.drawer_mesh = false;
     },
@@ -1070,8 +1065,7 @@ data() {
     },
     applyColor(){
       console.log(this.currentCellID)
-      this.current_color_all = this.COLOR_ALL2;
-      this.current_color_all[this.currentCellID] = this.color;
+      this.COLOR_ALL2[this.currentCellID] = this.color;
       this.option=this.getOption();
       this.drawer = false;
     },
@@ -1245,7 +1239,6 @@ data() {
       this.mesh_json = null;
       this.mesh_conf.names = [];
       this.mesh_conf.legends = [];
-      this.mesh_conf.colors = this.COLOR_mesh;
     },
     resetMesh() {
       this.cleanMesh();
@@ -1437,6 +1430,24 @@ data() {
     },
     //-------------configure ROI end -------------------//
 
+    //-------------atlas special conf begin -------------------//
+    LoadConfs(){
+      var used_url = this.G_Atlas['conf_url'];
+      console.log(used_url);
+      var self = this;
+      $.getJSON(used_url,function(_data) {
+        console.log("conf loaded");
+        if( 'celltype_color' in _data )
+            self.COLOR_ALL2 = _data['celltype_color']
+        if( 'mesh_color' in _data )
+            self.COLOR_mesh = _data['mesh_color']
+        if( 'symbol_size' in _data )
+            self.symbolSize = _data['symbol_size']
+        self.update_option();
+      });
+    },
+    //-------------atlas special conf end -------------------//
+     
     //-------------configure display_setting begin -------------------//
     refresh(){
       this.update_option();
@@ -1465,7 +1476,7 @@ data() {
           for(var i = 0; i<this.mesh_conf.names.length; i++){
               var curr_name = this.mesh_conf.names[i];
               var curr_legend_name = this.mesh_conf.legends[i];
-              var curr_color = this.mesh_conf.colors[i];
+              var curr_color = this.COLOR_mesh[i];
               if ( this.mesh_json[curr_name]['xyz'].length == 0 ) 
                   continue;
               //console.log('curr_legend_name');
@@ -1880,9 +1891,10 @@ data() {
       } // end of else.
     } // end of function option.
   },
-  mounted() {
+  mounted(){
     window.addEventListener("resize", this.resize_option,true);
     this.InitAtlas();
+    this.LoadConfs();
   },
 };
 </script>

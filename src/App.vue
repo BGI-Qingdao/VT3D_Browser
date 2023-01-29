@@ -55,6 +55,7 @@ export default {
     atlas['summary_url'] = baseurl + '/summary.json';
     atlas['gene_url']    = baseurl + '/gene.json';
     atlas['meshes_url']  = baseurl + '/meshes.json';
+    atlas['conf_url']    = baseurl + '/conf.json';
     atlas['anno_url']    = baseurl + '/Anno';
     atlas['genes_url']   = baseurl + '/Gene';
     this.G_Atlas = atlas;
