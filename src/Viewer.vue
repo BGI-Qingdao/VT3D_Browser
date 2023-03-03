@@ -198,7 +198,27 @@
                                       <el-button type="success" @click.native="changeVmax">Apply</el-button>
                                   </el-col>
                               </el-row>
-                             </div>
+                              <el-row style="margin-top:3px;margin-bottom:2px">
+                                  <el-col :span="8" >
+                                     <span  class='mspan'>cmap:</span>
+                                  </el-col>
+                                  <el-col :span="16" >
+                                      <el-select  v-model="curr_cmap" placeholder="curr_cmap" @change="refresh">
+                                        <el-option
+                                          v-for="item in all_cmaps"
+                                          :key="item"
+                                          :label="item"
+                                          :value="item">
+                                        </el-option>
+                                      </el-select>
+                                  </el-col>
+                              </el-row>
+                              <el-row style="margin-top:3px;margin-bottom:2px">
+                                  <el-switch  active-text="Dynamic alpha" inactive-text="Constant alpha"
+                                      v-model="use_virtual_alpha" @change="refresh" >
+                                  </el-switch>
+                              </el-row>
+                            </div>
                          </div>
                          <!-- ----------gene selection mode start--------------------------------------------------------------- -->
                          <!-- ----------digital in situ mode start--------------------------------------------------------------- -->
@@ -622,6 +642,13 @@ data() {
       //------------mesh type table end------
 
       //------------gene expression selection start------
+      all_cmaps: [
+          "BuYeRd",
+          "Reds",
+          "Hots",
+          "Cool",
+          "Binary"
+      ],
       // 2022-10-10, gene table data
       allTableData: [],
       tableData: [],
@@ -635,6 +662,8 @@ data() {
       tmp_vmax:0,
       curr_min_exp:0,
       curr_max_exp:2,
+      curr_cmap : 'BuYeRd',
+      use_virtual_alpha: false,
       fish_url:null,
       //------------gene expression selection end------
 
@@ -1527,28 +1556,67 @@ data() {
             },
         };
         var color_range = ['blue', 'white', 'red'];
-        if ( this.black_background == false )
+        if ( this.curr_cmap == 'BuYeRd' )
             color_range = ['blue','yellow','red'];
-        var visualMap= [
-            {
-               type: 'continuous',
-               min: this.curr_min_exp,
-               max: this.curr_max_exp,
-               range:[ this.curr_min_exp,this.curr_max_exp],  
-               dimension: 3, // the fourth dimension of series.data (i.e. value[3]) is mapped
-               seriesIndex: 0, // The first series is mapped.
-               orient: 'vertical',
-               right: 5,
-               top: 'center',
-               calculable: true,
-               realtime:false,
-               inRange: {
-                  color: color_range,
-               },
-               textStyle: {
-                  color: '#cccccc'
-               },
-        }];
+        else if ( this.curr_cmap == 'Reds' ) {
+            if ( this.black_background == false )
+                color_range = ['white','red','darkred'];
+            else 
+                color_range = ['black','red','darkred'];
+        } else if ( this.curr_cmap == 'Hots' ) {
+            color_range = ['black','red','yellow','white'];
+        } else if ( this.curr_cmap == "Cool" ){
+            color_range = ['cyan','magenta'];
+        } else if ( this.curr_cmap == "Binary" ){
+            if ( this.black_background == false )
+                color_range = ['white','black'];
+            else 
+                color_range = ['black','white'];
+        }
+        if ( this.use_virtual_alpha == false ){
+            var visualMap= [
+                {
+                   type: 'continuous',
+                   min: this.curr_min_exp,
+                   max: this.curr_max_exp,
+                   range:[ this.curr_min_exp,this.curr_max_exp],  
+                   dimension: 3, // the fourth dimension of series.data (i.e. value[3]) is mapped
+                   seriesIndex: 0, // The first series is mapped.
+                   orient: 'vertical',
+                   right: 5,
+                   top: 'center',
+                   calculable: true,
+                   realtime:false,
+                   inRange: {
+                      color: color_range,
+                   },
+                   textStyle: {
+                      color: '#cccccc'
+                   },
+            }];
+        } else {
+            var visualMap= [
+                {
+                   type: 'continuous',
+                   min: this.curr_min_exp,
+                   max: this.curr_max_exp,
+                   range:[ this.curr_min_exp,this.curr_max_exp],  
+                   dimension: 3, // the fourth dimension of series.data (i.e. value[3]) is mapped
+                   seriesIndex: 0, // The first series is mapped.
+                   orient: 'vertical',
+                   right: 5,
+                   top: 'center',
+                   calculable: true,
+                   realtime:false,
+                   inRange: {
+                      color: color_range,
+                      colorAlpha:[0.1,1.0],
+                   },
+                   textStyle: {
+                      color: '#cccccc'
+                   },
+            }];
+        }
         var ret = {
             legend_name : legend_name,
             one_series : one_series,
