@@ -40,6 +40,9 @@
           </div>
           <!-- end of dialog div -->
       </el-dialog>
+      <el-dialog title="Scoexp heatmap" style="width:1900px;" :visible.sync="drawer_heatmap" direction="ltr" :before-close="OnDrawerHeatMapClose">
+          <v-chart  class="chart" resizeable=true :width="chartWidth"  :option="option_heatmap" />
+      </el-dialog>
     </div>
     <!---------------------------- All floating items end --------------------------------------------------- -->
     <!---------------------------- Main windown begin --------------------------------------------------- -->
@@ -308,6 +311,9 @@
                                     <el-slider  v-model="min_cutoff" :step="0.5" :min="0" :max="6" @change="changeMinCutoff" show-stops>
                                     </el-slider>
                                 </el-col>
+                            </el-row>
+                            <el-row style="margin-top:3px;margin-bottom:2px">
+                                <el-button type="info"  @click.native="ShowHeatmap">Scoexp</el-button>
                             </el-row>
                          </div>
                          <!-- ----------digital in situ mode end--------------------------------------------------------------- -->
@@ -707,6 +713,24 @@ data() {
       },
       min_cutoff : 3,
       //------------channel selection end------
+      //------------Scoexp heatmap start ------
+      drawer_heatmap: false,
+      curr_channel_names : [],
+      curr_heatmap_data : [],
+      heat_vmin : -1000,
+      heat_vmax :  1000,
+      scoexp_gene_ids : null,
+      scoexp : {
+          red   : null,
+          green : null,
+          blue  : null,
+          gray  : null,
+          cyan  : null,
+          magenta : null,
+          yellow : null,
+          cyan   : null,
+      },
+      //------------Scoexp heatmap end ------
 
       //------------model data : mesh begin ------
       mesh_json : null,
@@ -780,6 +804,7 @@ data() {
             },
         }
       },
+      option_heatmap:null,
     }
   },
   methods: {
@@ -830,6 +855,7 @@ data() {
             this.is_ct_mode = false;
             this.is_gc_mode = true;
             this.is_ge_mode = false;
+            this.loadScoexpIds();
         }
     },
     // ------------------ basic conf functions end----------------------
@@ -1163,27 +1189,155 @@ data() {
     },
     //-------------3d box conf end -------------------//
 
+    //------------function of Scoexp heatmap start------
+    OnDrawerHeatMapClose(done) {
+        this.drawer_heatmap = false;
+        done();
+    },
+    loadScoexpIds(){
+        if ( this.scoexp_gene_ids == null ) {
+            var self = this;
+            var url = this.G_Atlas["scoexp_url"] + '/genenames.json';
+            $.getJSON(url, function(_data){
+                self.scoexp_gene_ids = _data;
+            });
+        }
+    },
+    loadOneChannelScoexp(input_gene, key) {
+        if ( this.scoexp[key] != null ) {
+            this.scoexp[key] = null;
+        }
+        if ( input_gene != "" ) {
+            var used_url = this.G_Atlas['scoexp_url'] +'/'+input_gene+".json";
+            var self = this;
+            var kkey = key;
+            $.getJSON(used_url,function(_data) {
+              self.scoexp[kkey] = _data;
+            });
+        }
+    },
+    ValidGeneCount() {
+        var ret=0;
+        for( var i=0; i<this.channel_keys.length; i++ ) {
+            if ( this.scoexp[this.channel_keys[i]] != null )
+                ret = ret+1;
+        }
+        return ret;
+    },
+    ShowHeatmap(){
+        if ( this.scoexp_gene_ids == null ) 
+            return ;
+        if ( this.ValidGeneCount() < 2 )
+            return ;
+        var curr_genes = [];
+        var curr_gene_data = [];
+        var curr_gene_id = [];
+        for( var i=0; i<this.channel_keys.length; i++ ) {
+            var cname = this.channel_keys[i];
+            if ( this.scoexp[cname] == null )
+                continue;
+            var gname = this.getChannelName(this.channel_keys[i])
+            curr_genes.push(gname);
+            curr_gene_data.push(this.scoexp[this.channel_keys[i]]);
+            curr_gene_id.push(this.scoexp_gene_ids[gname])
+        }
+        var data = [];
+        var min = 1000;
+        var max = -1000;
+        for( var i=0; i<curr_genes.length; i++ ) {
+            for( var j=0; j<curr_genes.length; j++ ) {
+                if ( i > j ) {
+                    data.push([i, j,'-']);
+                    continue;
+                }
+                var soexp_value = curr_gene_data[i][curr_gene_id[j]];
+                soexp_value = parseInt(soexp_value*1000);
+                soexp_value = soexp_value/1000;
+                if( soexp_value > max ) max = soexp_value;
+                if( soexp_value < min ) min = soexp_value;
+                data.push([i, j,soexp_value]);
+            }
+        }
+
+        this.option_heatmap = {
+          tooltip: {
+            position: 'top'
+          },
+          grid: {
+            height: '50%',
+            top: '10%'
+          },
+          xAxis: {
+            type: 'category',
+            data: curr_genes,
+            splitArea: {
+              show: true
+            }
+          },
+          yAxis: {
+            type: 'category',
+            data: curr_genes,
+            splitArea: {
+              show: true
+            }
+          },
+          visualMap: {
+            min: min,
+            max: max,
+            calculable: true,
+            orient: 'horizontal',
+            left: 'center',
+            bottom: '15%'
+          },
+          series: [
+            {
+              name: 'Punch Card',
+              type: 'heatmap',
+              data: data,
+              label: {
+                show: true
+              },
+              emphasis: {
+                itemStyle: {
+                  shadowBlur: 10,
+                  shadowColor: 'rgba(0, 0, 0, 0.5)'
+                }
+              }
+            }
+          ]
+        };
+        this.drawer_heatmap = true;
+    },
+
+    //------------function of Scoexp heatmap end------
     //------------function of channel selection start------
     ApplyRed() {
-        this.loadOneChannelGene(this.input_gene_red,"red")
+        this.loadOneChannelGene(this.input_gene_red,"red");
+        this.loadOneChannelScoexp(this.input_gene_red,"red");
     },
     ApplyGreen() {
         this.loadOneChannelGene(this.input_gene_green,"green")
+        this.loadOneChannelScoexp(this.input_gene_green,"green");
     },
     ApplyBlue() {
         this.loadOneChannelGene(this.input_gene_blue,"blue")
+        this.loadOneChannelScoexp(this.input_gene_blue,"blue");
     },
     ApplyGray() {
         this.loadOneChannelGene(this.input_gene_gray,"gray")
+        this.loadOneChannelScoexp(this.input_gene_gray,"gray");
     },
     ApplyCyan() {
         this.loadOneChannelGene(this.input_gene_cyan,"cyan")
+        this.loadOneChannelScoexp(this.input_gene_cyan,"cyan");
     },
     ApplyMagenta() {
         this.loadOneChannelGene(this.input_gene_magenta,"magenta")
+        this.loadOneChannelScoexp(this.input_gene_magenta,"magenta");
     },
     ApplyYellow() {
         this.loadOneChannelGene(this.input_gene_yellow,"yellow")
+        this.loadOneChannelScoexp(this.input_gene_yellow,"yellow");
     },
     loadOneChannelGene(input_gene, key) {
         if ( this.channel_json_raw[key] != null ) {

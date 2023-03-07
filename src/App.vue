@@ -58,6 +58,7 @@ export default {
     atlas['conf_url']    = baseurl + '/conf.json';
     atlas['anno_url']    = baseurl + '/Anno';
     atlas['genes_url']   = baseurl + '/Gene';
+    atlas['scoexp_url']  = baseurl + '/gene_scoexp';
     this.G_Atlas = atlas;
     var self = this;
     $.getJSON(atlas['summary_url'],function(_data) {
