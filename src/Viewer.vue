@@ -40,8 +40,8 @@
           </div>
           <!-- end of dialog div -->
       </el-dialog>
-      <el-dialog title="Scoexp heatmap" style="width:1900px;" :visible.sync="drawer_heatmap" direction="ltr" :before-close="OnDrawerHeatMapClose">
-          <v-chart  class="chart" resizeable=true :width="chartWidth"  :option="option_heatmap" />
+      <el-dialog title="Scoexp heatmap" style="width:1800px;" :visible.sync="drawer_heatmap" direction="ltr" :before-close="OnDrawerHeatMapClose">
+          <v-chart  class="chart" resizeable=true style="width:90%;height:800px"   :option="option_heatmap" />
       </el-dialog>
     </div>
     <!---------------------------- All floating items end --------------------------------------------------- -->
@@ -1246,7 +1246,7 @@ data() {
         var max = -1000;
         for( var i=0; i<curr_genes.length; i++ ) {
             for( var j=0; j<curr_genes.length; j++ ) {
-                if ( i > j ) {
+                if ( i <= j ) {
                     data.push([i, j,'-']);
                     continue;
                 }
