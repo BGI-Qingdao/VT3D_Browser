@@ -2,7 +2,7 @@
 <div>
     <!---------------------------- All floating items begin --------------------------------------------------- -->
     <div  style="height=1px;">
-      <el-dialog title="celltype color" style="width:500px;" :visible.sync="drawer" direction="ltr" :before-close="OnDrawerClose">
+      <el-dialog title="celltype color" style="width:500px;" :visible.sync="drawer" direction="ltr" :before-close="OnDrawerClose" center>
           <div>
               <hr>
               <!-- start of color palette -->
@@ -21,7 +21,7 @@
           </div> 
           <!-- end of dialog div -->
       </el-dialog>
-      <el-dialog title="mesh color" style="width:500px;" :visible.sync="drawer_mesh" direction="ltr" :before-close="OnDrawerMeshClose">
+      <el-dialog title="mesh color" style="width:500px;" :visible.sync="drawer_mesh" direction="ltr" :before-close="OnDrawerMeshClose" center>
           <div>
               <hr>
               <!-- start of color palette -->
@@ -40,8 +40,10 @@
           </div>
           <!-- end of dialog div -->
       </el-dialog>
-      <el-dialog title="Scoexp heatmap" style="width:1800px;" :visible.sync="drawer_heatmap" direction="ltr" :before-close="OnDrawerHeatMapClose">
-          <v-chart  class="chart" resizeable=true style="width:90%;height:800px"   :option="option_heatmap" />
+      <el-dialog title="Scoexp heatmap" style="width:100%;" :visible.sync="drawer_heatmap" direction="ltr" :before-close="OnDrawerHeatMapClose" center>
+          <div style="margin:10px">
+          <v-chart  class="chart" resizeable=true style="width:900px;height:700px"   :option="option_heatmap" />
+          </div>
       </el-dialog>
     </div>
     <!---------------------------- All floating items end --------------------------------------------------- -->
@@ -1264,19 +1266,34 @@ data() {
             position: 'top'
           },
           grid: {
-            height: '50%',
-            top: '10%'
+            bottom: '15%',
+            top: '5%',
+            right: '10%',
+            left: '15%',
           },
           xAxis: {
             type: 'category',
             data: curr_genes,
             splitArea: {
               show: true
-            }
+            },
+            axisLabel : {
+              textStyle : {
+                fontSize:  24,
+                color: 'white',
+              },
+            },
           },
           yAxis: {
             type: 'category',
             data: curr_genes,
+            axisLabel : {
+              textStyle : {
+                fontSize:  24,
+                color: 'white',
+                rotate:45,
+              },
+            },
             splitArea: {
               show: true
             }
@@ -1284,10 +1301,14 @@ data() {
           visualMap: {
             min: min,
             max: max,
-            calculable: true,
-            orient: 'horizontal',
-            left: 'center',
-            bottom: '15%'
+            calculable: false,
+            orient: 'vertical',
+            left: '95%',
+            bottom: '60%',
+            textStyle : {
+              fontSize:  24,
+              color: 'white',
+            },
           },
           series: [
             {
@@ -1295,7 +1316,10 @@ data() {
               type: 'heatmap',
               data: data,
               label: {
-                show: true
+                show: true,
+                textStyle : {
+                  fontSize:  24,
+                },
               },
               emphasis: {
                 itemStyle: {
