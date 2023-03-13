@@ -509,7 +509,7 @@
                               <!-- Draw box start -->
                               <el-row style="margin:3px;">
                                   <el-switch  align='center' active-text="Draw box" inactive-text="Ignore box"
-                                    v-model="draw_box" @change="refresh" >
+                                    v-model="draw_box" @change="refresh_deep" >
                                   </el-switch>
                               </el-row>
                               <!-- Draw box end -->
@@ -1656,6 +1656,9 @@ data() {
     //-------------atlas special conf end -------------------//
      
     //-------------configure display_setting begin -------------------//
+    refresh_deep(){
+      this.update_option_deep();
+    },
     refresh(){
       this.update_option();
     },
@@ -1916,8 +1919,10 @@ data() {
                     [used_xmin, used_ymax, used_zmax],
                 ]
             };
+            console.log("box");
             return box_series;
         } else {
+            console.log("No box");
             return null;
         }
     },
@@ -2022,7 +2027,7 @@ data() {
                                       used_xmax,
                                       used_ymax,
                                       used_zmax);
-        if(box_series!= null){
+        if(box_series != null){
             series_list.push(box_series)
         }
         var curr_projection = '';
