@@ -346,6 +346,15 @@
                                  <el-col :span="12" >
                                      <el-button @click="showPAGAColorPalette">color</el-button>
                                  </el-col>
+                                 <el-col :span="8" >
+                                     <span  class='mspan'>Line Width:</span>
+                                 </el-col>
+                                 <el-col :span="8" >
+                                     <el-input v-model="tmp_paga_lineW" placeholder="0"></el-input>
+                                 </el-col>
+                                 <el-col :span="8" >
+                                     <el-button @click="updatePAGALineWidth">Apply</el-button>
+                                 </el-col>
                              </el-row>
                          </div>
                       <!-- ----------mode setting end --------------------------------------------------------------- -->
@@ -784,6 +793,9 @@ data() {
       //------------paga control here -----------
       traj_names : null,
       traj_data : null,
+      tmp_paga_lineW : 5 ,
+      traj_width_basic : 5,
+      traj_width: null,
       drawer_paga :false,
       paga_color : "red",
       //------------paga control end ------------
@@ -1490,6 +1502,10 @@ data() {
         }
     },
     //------------function of channel selection end------
+    updatePAGALineWidth(){
+        this.traj_width_basic = this.tmp_paga_lineW;
+        this.update_option();
+    },
     showPAGAColorPalette(){
         this.drawer_paga = true;
     },
@@ -1509,6 +1525,7 @@ data() {
         if( _data[0].length < 1 )
             return ;
         var new_paga_data = {};
+        var new_paga_width = {}
         var new_traj_names = [];
         for(var i = 0 ; i < _data[0].length; i++){
             var traj_name = _data[0][i];
@@ -1519,9 +1536,11 @@ data() {
                 vectors.push( [xyz[j][0]*this.box_scale,xyz[j][1]*this.box_scale, xyz[j][2]*this.box_scale] );
             }
             new_paga_data[traj_name] = vectors;
+            new_paga_width[traj_name] = _data[2][i]
         }
         this.traj_names = new_traj_names;
         this.traj_data = new_paga_data;
+        this.traj_width = new_paga_width;
     },
     closePAGAColor() {
       this.drawer_paga = false;
@@ -1995,7 +2014,7 @@ data() {
                 name: legend_list[i],
                 type: 'line3D',
                 lineStyle: {
-                    width: 3,
+                    width: this.traj_width_basic*this.traj_width[curr_legend_name],
                     color: this.paga_color,
                 },
                 data: the_data
