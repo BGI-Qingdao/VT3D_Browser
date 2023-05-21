@@ -50,12 +50,14 @@ export default {
     var params = new URLSearchParams(uri);
     var baseurl=params.get("atlas");
     if( baseurl == null ) baseurl = ""
+    //if( baseurl == null ) baseurl = "/test_data/"
     var atlas = {}
     atlas['main_url']    = baseurl;
     atlas['summary_url'] = baseurl + '/summary.json';
     atlas['gene_url']    = baseurl + '/gene.json';
     atlas['meshes_url']  = baseurl + '/meshes.json';
     atlas['conf_url']    = baseurl + '/conf.json';
+    atlas['paga_url']    = baseurl + '/paga.json';
     atlas['anno_url']    = baseurl + '/Anno';
     atlas['genes_url']   = baseurl + '/Gene';
     atlas['scoexp_url']  = baseurl + '/gene_scoexp';

@@ -21,6 +21,25 @@
           </div> 
           <!-- end of dialog div -->
       </el-dialog>
+      <el-dialog title="PAGA color" style="width:500px;" :visible.sync="drawer_paga" direction="ltr" :before-close="OnDrawerClose" center>
+          <div>
+              <hr>
+              <!-- start of color palette -->
+              <div style='width:100%;height:400px;'>
+                <sketch-picker align='center' v-model="color" @input="colorValueChange"></sketch-picker>
+                <el-row style="margin-top:3px;margin-bottom:2px">
+                    <el-col :span="12" >
+                        <el-button type='success' @click='applyPAGAColor'>Apply</el-button>
+                    </el-col>
+                    <el-col :span="12" >
+                        <el-button type='info' @click='closePAGAColor'>Close</el-button>
+                    </el-col>
+                </el-row>
+              </div>
+              <!-- end of color palette -->
+          </div> 
+          <!-- end of dialog div -->
+      </el-dialog>
       <el-dialog title="mesh color" style="width:500px;" :visible.sync="drawer_mesh" direction="ltr" :before-close="OnDrawerMeshClose" center>
           <div>
               <hr>
@@ -319,6 +338,16 @@
                             </el-row>
                          </div>
                          <!-- ----------digital in situ mode end--------------------------------------------------------------- -->
+                         <div align="center"  v-show="is_paga_mode" style="margin:3px; border: 3px solid #ccc;">
+                             <el-row style="margin-top:3px;margin-bottom:2px">
+                                 <el-col :span="12" >
+                                     <span  class='mspan'>PAGA Traj color:</span>
+                                 </el-col>
+                                 <el-col :span="12" >
+                                     <el-button @click="showPAGAColorPalette">color</el-button>
+                                 </el-col>
+                             </el-row>
+                         </div>
                       <!-- ----------mode setting end --------------------------------------------------------------- -->
                       </el-collapse-item>
                       <el-collapse-item title="Mesh setting:" name="2">
@@ -608,6 +637,8 @@ data() {
           "CellTypes",
           "GeneExpression",
           "Digital_in_situ",
+          "PAGA_trajectory",
+          //"Regulons"
       ],
       curr_mode : 'CellTypes',
       mode_title: 'CellType setting',
@@ -615,6 +646,7 @@ data() {
       is_ct_mode: true,
       is_ge_mode: false,
       is_gc_mode: false,
+      is_paga_mode:false,
       box_scale: 0,
       unit1 :1,
       // working mode end ----------------------------------------
@@ -749,7 +781,12 @@ data() {
       COLOR_mesh: COLOR_mesh,
       color: '',
       //------------color legends confs end------
-
+      //------------paga control here -----------
+      traj_names : null,
+      traj_data : null,
+      drawer_paga :false,
+      paga_color : "red",
+      //------------paga control end ------------
       //------------roi confs begin------
       z_scale:1,
       tmp_z_scale:1,
@@ -842,6 +879,7 @@ data() {
             this.is_ct_mode = true;
             this.is_gc_mode = false;
             this.is_ge_mode = false;
+            this.is_paga_mode = false;
             // set a cell type
             this.anno_array = this.G_Atlas['summary']['annokeys'];
             this.curr_anno = this.anno_array[0];
@@ -852,12 +890,24 @@ data() {
             this.is_ct_mode = false;
             this.is_gc_mode = false;
             this.is_ge_mode = true;
+            this.is_paga_mode = false;
             this.loadGeneTable();
-        } else {
+        } else if (this.curr_mode == "Digital_in_situ" ){
             this.is_ct_mode = false;
             this.is_gc_mode = true;
             this.is_ge_mode = false;
+            this.is_paga_mode = false;
             this.loadScoexpIds();
+        } else if (this.curr_mode == "PAGA_trajectory" ){
+            this.is_ct_mode = false;
+            this.is_gc_mode = false;
+            this.is_ge_mode = false;
+            this.is_paga_mode = true;
+            this.loadPAGATraj();
+        } else if (this.curr_mode == "Regulons" ){
+
+        } else {
+
         }
     },
     // ------------------ basic conf functions end----------------------
@@ -1373,7 +1423,7 @@ data() {
             var used_url = this.G_Atlas['genes_url'] +'/'+input_gene+".json";
             var self = this;
             var kkey = key;
-            $.getJSON(used_url,function(_data) {
+             $.getJSON(used_url,function(_data) {
               self.setChannelGeneData(_data,kkey);
               self.update_option_deep();
             });
@@ -1440,7 +1490,47 @@ data() {
         }
     },
     //------------function of channel selection end------
-
+    showPAGAColorPalette(){
+        this.drawer_paga = true;
+    },
+    loadPAGATraj(){
+        if ( this.paga_data == null ) {
+            var self = this;
+            var url = this.G_Atlas["paga_url"];
+            $.getJSON(url, function(_data){
+                self.setPAGA(_data)
+                self.$nextTick(() => {
+                    self.update_option_deep();
+                });
+            });
+        }
+    },
+    setPAGA(_data){
+        if( _data[0].length < 1 )
+            return ;
+        var new_paga_data = {};
+        var new_traj_names = [];
+        for(var i = 0 ; i < _data[0].length; i++){
+            var traj_name = _data[0][i];
+            new_traj_names.push(traj_name);
+            var xyz = _data[1][i];
+            var vectors = []
+            for( var j = 0 ; j < xyz.length; j++){
+                vectors.push( [xyz[j][0]*this.box_scale,xyz[j][1]*this.box_scale, xyz[j][2]*this.box_scale] );
+            }
+            new_paga_data[traj_name] = vectors;
+        }
+        this.traj_names = new_traj_names;
+        this.traj_data = new_paga_data;
+    },
+    closePAGAColor() {
+      this.drawer_paga = false;
+    },
+    applyPAGAColor() {
+      this.paga_color = this.color;
+      this.option=this.getOption() ;
+      this.drawer_paga = false;
+    },
     //-------------mesh managerment start -------------------//
     cleanMesh() {
       this.mesh_json = null;
@@ -1475,7 +1565,7 @@ data() {
             var xyz =  _data[1][i];
             var vectors = []
             for( var j = 0 ; j < xyz.length; j++){
-                vectors.push([xyz[j][0]*this.box_scale,xyz[j][1]*this.box_scale, xyz[j][2]*this.box_scale] );
+                vectors.push( [xyz[j][0]*this.box_scale,xyz[j][1]*this.box_scale, xyz[j][2]*this.box_scale] );
             }
             this.mesh_json[mesh]['xyz'] = vectors;
             this.mesh_json[mesh]['ijk'] = _data[2][i];
@@ -1889,6 +1979,35 @@ data() {
         };
         return ret;
     },
+    getPAGASeries(){
+        if(this.traj_names == null)
+            return null;
+        console.log('draw paga lines now');
+        var series_list = [];
+        var legend_list = [];
+        console.log('start series');
+        for( var i = 0 ; i<this.traj_names.length ; i++ )
+        {
+            var curr_legend_name = this.traj_names[i];
+            var the_data = this.traj_data[curr_legend_name];
+            legend_list.push(curr_legend_name);
+            var one_series = {
+                name: legend_list[i],
+                type: 'line3D',
+                lineStyle: {
+                    width: 3,
+                    color: this.paga_color,
+                },
+                data: the_data
+            };
+            series_list.push(one_series);
+        } // end of for traj_names.length
+        var ret = {
+            series_list : series_list,
+            legend_list : legend_list,
+        };
+        return ret;
+    },
     getBoxSeries(used_xmin,used_ymin,used_zmin,used_xmax,used_ymax,used_zmax){
         if ( this.draw_box == true) {
             var box_series = {
@@ -1938,15 +2057,19 @@ data() {
       var scatter_series = null ;
       var gene_exp_serie = null;
       var channel_series = null;
+      var paga_series = null
       mesh_serie = this.getMeshSerie();
       if( this.curr_mode == "CellTypes" ) 
           scatter_series = this.getScatterSeries();
       else if ( this.curr_mode == "GeneExpression" )
           gene_exp_serie = this.getGeneExpSerie();
-      else 
+      else if ( this.curr_mode == "Digital_in_situ" )
           channel_series = this.getChannelSeries();
+      else if ( this.curr_mode == "PAGA_trajectory" )
+          paga_series = this.getPAGASeries();
+      
       // Draw loading if necessary
-      if ( mesh_serie == null && scatter_series == null && gene_exp_serie == null && channel_series == null ) {
+      if ( mesh_serie == null && scatter_series == null && gene_exp_serie == null && channel_series == null && paga_series == null) {
           this.data_valid = false;
           this.model_only = true;
           return this.getLoadingOption(bk_color,ft_color);
@@ -1973,7 +2096,7 @@ data() {
                  this.model_only = true;
                  tips = 'Model done, still loading scatters ...';
             }
-         } else if ( this.curr_mode == "GeneExpression" ){
+        } else if ( this.curr_mode == "GeneExpression" ){
             if( gene_exp_serie != null){
                  this.data_valid = true;
                  this.model_only = false;
@@ -1985,22 +2108,36 @@ data() {
                  this.model_only = true;
                  tips = 'Model done, still loading gene data ...';
             }
-         } else {
-            if( channel_series!=null){
-                for(var i = 0; i < channel_series.series_list.length; i++){
-                    series_list.push(channel_series.series_list[i])
-                }
-                for(var i = 0; i < channel_series.legend_list.length; i++){
-                    legend_list.push(channel_series.legend_list[i]);
-                }
-                this.data_valid = true;
-                this.model_only = false;
-            } else {
-                 this.data_valid = false;
-                 this.model_only = true;
-            }
-         }
-          // Draw mesh
+        } else if ( this.curr_mode == "Digital_in_situ" ) {
+           if( channel_series!=null){
+               for(var i = 0; i < channel_series.series_list.length; i++){
+                   series_list.push(channel_series.series_list[i])
+               }
+               for(var i = 0; i < channel_series.legend_list.length; i++){
+                   legend_list.push(channel_series.legend_list[i]);
+               }
+               this.data_valid = true;
+               this.model_only = false;
+           } else {
+                this.data_valid = false;
+                this.model_only = true;
+           }
+        } else if ( this.curr_mode == "PAGA_trajectory" ) {
+           if( paga_series!=null){
+               for(var i = 0; i < paga_series.series_list.length; i++){
+                   series_list.push(paga_series.series_list[i])
+               }
+               for(var i = 0; i < paga_series.legend_list.length; i++){
+                   legend_list.push(paga_series.legend_list[i]);
+               }
+               this.data_valid = true;
+               this.model_only = false;
+           } else {
+                this.data_valid = false;
+                this.model_only = true;
+           }
+        }
+        // Draw mesh
         if(mesh_serie != null){
             for(var i = 0;i< mesh_serie.series_list.length; i++){
                 series_list.push(mesh_serie.series_list[i]);
