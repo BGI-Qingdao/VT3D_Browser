@@ -107,7 +107,7 @@
                                    <span  class='mspan'>Annotation:</span>
                                 </el-col>
                                 <el-col :span="16" >
-                                    <el-select  v-model="curr_anno" placeholder="curr_anno" @change="OnChangeAnno">
+                                    <el-select v-model="curr_anno" placeholder="curr_anno" @change="OnChangeAnno">
                                       <el-option
                                         v-for="item in anno_array"
                                         :key="item"
@@ -346,6 +346,8 @@
                                  <el-col :span="12" >
                                      <el-button @click="showPAGAColorPalette">color</el-button>
                                  </el-col>
+                             </el-row>
+                             <el-row style="margin-top:3px;margin-bottom:2px">
                                  <el-col :span="8" >
                                      <span  class='mspan'>Line Width:</span>
                                  </el-col>
@@ -355,6 +357,11 @@
                                  <el-col :span="8" >
                                      <el-button @click="updatePAGALineWidth">Apply</el-button>
                                  </el-col>
+                             </el-row>
+                             <el-row style="margin-top:3px;margin-bottom:2px">
+                                  <el-switch  active-text="Curve mode" inactive-text="Line mode"
+                                    v-model="paga_curve" @change="UpdatePagaData" >
+                                  </el-switch>
                              </el-row>
                          </div>
                       <!-- ----------mode setting end --------------------------------------------------------------- -->
@@ -798,6 +805,7 @@ data() {
       traj_width: null,
       drawer_paga :false,
       paga_color : "red",
+      paga_curve : true,
       //------------paga control end ------------
       //------------roi confs begin------
       z_scale:1,
@@ -1513,6 +1521,8 @@ data() {
         if ( this.paga_data == null ) {
             var self = this;
             var url = this.G_Atlas["paga_url"];
+            if (this.paga_curve == false )
+                url = this.G_Atlas["paga_line_url"];
             $.getJSON(url, function(_data){
                 self.setPAGA(_data)
                 self.$nextTick(() => {
@@ -1520,6 +1530,16 @@ data() {
                 });
             });
         }
+    },
+    cleanPAGA(){
+        this.traj_names = null;
+        this.traj_data = null;
+        this.traj_width = null;
+    },
+    UpdatePagaData(){
+        this.cleanPAGA();
+        this.update_option_deep();
+        this.loadPAGATraj();
     },
     setPAGA(_data){
         if( _data[0].length < 1 )

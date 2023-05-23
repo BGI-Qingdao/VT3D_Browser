@@ -58,6 +58,7 @@ export default {
     atlas['meshes_url']  = baseurl + '/meshes.json';
     atlas['conf_url']    = baseurl + '/conf.json';
     atlas['paga_url']    = baseurl + '/paga.json';
+    atlas['paga_line_url']  = baseurl + '/paga_line.json';
     atlas['anno_url']    = baseurl + '/Anno';
     atlas['genes_url']   = baseurl + '/Gene';
     atlas['scoexp_url']  = baseurl + '/gene_scoexp';
