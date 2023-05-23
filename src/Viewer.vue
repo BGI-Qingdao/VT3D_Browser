@@ -903,8 +903,6 @@ data() {
             // set a cell type
             this.anno_array = this.G_Atlas['summary']['annokeys'];
             this.curr_anno = this.anno_array[0];
-            var tempkey = this.curr_anno+'_int2legend';
-            this.curr_legends = this.G_Atlas['summary']['annomapper'][tempkey];
             this.OnChangeAnno();
         }else if ( this.curr_mode == "GeneExpression" ) {
             this.is_ct_mode = false;
@@ -973,6 +971,7 @@ data() {
         this.tableDataClusters = new_tableDataClusters;
         this.all_clusters = legend_num;
     },
+
     resetCellTypeScattters(){
         var used_url = this.G_Atlas["anno_url"] +"/"+this.curr_anno+".json"
         var self = this;
@@ -1009,6 +1008,8 @@ data() {
     },
     OnChangeAnno(){
         this.cleanCellTypeBuffer();
+        var tempkey = this.curr_anno+'_int2legend';
+        this.curr_legends = this.G_Atlas['summary']['annomapper'][tempkey];
         this.InitAnnoTable();
         this.resetCellTypeScattters();
         this.update_option_deep();
@@ -2060,18 +2061,18 @@ data() {
                     [used_xmax, used_ymin, used_zmin],
                     [used_xmax, used_ymax, used_zmin],
                     [used_xmin, used_ymax, used_zmin],
-                    [used_xmin, used_ymin, used_zmin], // rect01
+                    [used_xmin, used_ymin, used_zmin],// rect01
                     [used_xmin, used_ymin, used_zmax],
                     [used_xmax, used_ymin, used_zmax],
                     [used_xmax, used_ymin, used_zmin],
-                    [used_xmin, used_ymin, used_zmin], // rect02
+                    [used_xmin, used_ymin, used_zmin],// rect02
                     [used_xmax, used_ymin, used_zmin],
                     [used_xmax, used_ymax, used_zmin],
-                    [used_xmax, used_ymax, used_zmax], 
-                    [used_xmax, used_ymin, used_zmax], // rect 03
+                    [used_xmax, used_ymax, used_zmax],
+                    [used_xmax, used_ymin, used_zmax],// rect 03
                     [used_xmin, used_ymin, used_zmax],
                     [used_xmin, used_ymax, used_zmax],
-                    [used_xmax, used_ymax, used_zmax], // rect 04
+                    [used_xmax, used_ymax, used_zmax],// rect 04
                     [used_xmax, used_ymax, used_zmin],
                     [used_xmin, used_ymax, used_zmin],
                     [used_xmin, used_ymax, used_zmax],
