@@ -88,7 +88,8 @@
                                      v-for="item in all_modes"
                                      :key="item"
                                      :label="item"
-                                     :value="item">
+                                     :value="item"
+                                     :disabled="!mode_onoff[item]">
                                    </el-option>
                                  </el-select>
                              </el-col>
@@ -182,6 +183,7 @@
                                         <!-- 2022-10-10 add gene table -->
                                         <el-table ref="geneTable" 
                                         :show-header='true' class="table"
+                                        :row-class-name="tableRowClassName"
                                         :data="tableData.slice((currentGenePage-1)*pageSize,currentGenePage*pageSize)"
                                         :highlight-current-row='true'
                                         stripe
@@ -244,7 +246,62 @@
                               </el-row>
                             </div>
                          </div>
-                         <!-- ----------gene selection mode start--------------------------------------------------------------- -->
+                         <!-- ----------gene selection mode end --------------------------------------------------------------- -->
+                         <!-- ----------regulon  mode start--------------------------------------------------------------- -->
+                         <div align="center"  v-show="is_grn_mode" style="margin:3px; border: 3px solid #ccc;">
+                            <div align="left" style="margin-left:10px;">
+                                <el-row style="margin-top:1px;margin-bottom:1px">
+                                    <span class='mspan'>Please choose an regulon:</span>
+                                </el-row>
+                                <el-row style="margin-top:3px;margin-bottom:2px">
+                                    <el-col :span="16" >
+                                        <el-input  v-model="input_regulon_id" placeholder=""></el-input>
+                                    </el-col>
+                                    <el-col :span="8" >
+                                        <el-button type="success" @click.native="updateRegulonTable">Search</el-button>
+                                    </el-col>
+                                </el-row>
+                                <el-row style="margin-top:3px;margin-bottom:2px">
+                                    <el-col :span="24" >
+                                        <el-table 
+                                        :show-header='true' class="table"
+                                        :row-class-name="tableRowClassName"
+                                        :data="tableRegulonData.slice((currentRegulonPage-1)*pageSize,currentRegulonPage*pageSize)"
+                                        :highlight-current-row='true'
+                                        stripe
+                                        @row-dblclick='handleRegulonRow'>
+                                            <el-table-column prop='regulon_name' label='regulon name'></el-table-column>
+                                        </el-table>
+                                        <!-- gene table end-->
+                                    </el-col>
+                                </el-row>
+                                <el-row style="margin-top:3px;margin-bottom:2px">
+                                        <el-pagination layout="total, prev,jumper,next"
+                                            :total="this.tableRegulonData.length"
+                                            :page-size="pageSize" 
+                                            :current-page.sync="currentRegulonPage">
+                                        </el-pagination>
+                                </el-row>
+                            </div>
+                            <div>
+                              <el-row style="margin-top:3px;margin-bottom:2px">
+                                  <el-col :span="8" >
+                                     <span  class='mspan'>cmap:</span>
+                                  </el-col>
+                                  <el-col :span="16" >
+                                      <el-select  v-model="curr_cmap" placeholder="curr_cmap" @change="refresh">
+                                        <el-option
+                                          v-for="item in all_cmaps"
+                                          :key="item"
+                                          :label="item"
+                                          :value="item">
+                                        </el-option>
+                                      </el-select>
+                                  </el-col>
+                              </el-row>
+                            </div>
+                         </div>
+                         <!-- ----------regulon mode end --------------------------------------------------------------- -->
                          <!-- ----------digital in situ mode start--------------------------------------------------------------- -->
                          <div align="center"  v-show="is_gc_mode" style="margin:3px; border: 3px solid #ccc;">
                             <el-row style="margin-top:3px;margin-bottom:2px">
@@ -654,8 +711,19 @@ data() {
           "GeneExpression",
           "Digital_in_situ",
           "PAGA_trajectory",
-          //"Regulons"
+          "GRN_Regulons",
+          "Hotspot_Modules",
+          "Cell_Cell_Communication",
       ],
+      mode_onoff: {
+            "CellTypes"         :   true,
+            "GeneExpression"    :   true,
+            "Digital_in_situ"   :   true,
+            'PAGA_trajectory'   :   false,
+            'GRN_Regulons'      :   false,
+            'Hotspot_Modules'   :   false,
+            'Cell_Cell_Communication'   : false,
+      },
       curr_mode : 'CellTypes',
       mode_title: 'CellType setting',
       // mode tags
@@ -663,6 +731,7 @@ data() {
       is_ge_mode: false,
       is_gc_mode: false,
       is_paga_mode:false,
+      is_grn_mode: false,
       box_scale: 0,
       unit1 :1,
       // working mode end ----------------------------------------
@@ -696,7 +765,17 @@ data() {
       drawer_mesh:false,
       final_meshes: [],
       //------------mesh type table end------
-
+      
+      //------------regulon start------
+      tableRegulonData :[],
+      allTableRegulonData : [],
+      input_regulon_id : '',
+      currentRegulonPage: 1,
+      curr_regulon_name: '',
+      regulon_json_raw : null,
+      regulon_json_data : null,
+      //------------regulon end------
+     
       //------------gene expression selection start------
       all_cmaps: [
           "BuYeRd",
@@ -867,6 +946,15 @@ data() {
     }
   },
   methods: {
+    tableRowClassName({row, rowIndex}) {
+        //console.log(rowIndex)
+        if (rowIndex %2 ==0) {
+          return 'warning-row';
+        } else if (rowIndex %2 ==1) {
+          return 'success-row';
+        }
+        return 'success-row';
+    },
     // ------------------ resize page begin ----------------------
     resize_option() {
        this.$nextTick(() => {
@@ -891,39 +979,35 @@ data() {
     },
     // ------------------ resize page end----------------------
     // ------------------ basic conf functions begin----------------------
+    OffModeFlag(){
+        this.is_ct_mode = false;
+        this.is_gc_mode = false;
+        this.is_ge_mode = false;
+        this.is_grn_mode = false;
+        this.is_paga_mode = false;
+    },
     OnChangeMode(){
         this.mode_title = this.curr_mode+" setting";
         this.update_option_deep();
         console.log(this.curr_mode)
+        this.OffModeFlag()
         if( this.curr_mode == "CellTypes") {
             this.is_ct_mode = true;
-            this.is_gc_mode = false;
-            this.is_ge_mode = false;
-            this.is_paga_mode = false;
-            // set a cell type
             this.anno_array = this.G_Atlas['summary']['annokeys'];
             this.curr_anno = this.anno_array[0];
             this.OnChangeAnno();
         }else if ( this.curr_mode == "GeneExpression" ) {
-            this.is_ct_mode = false;
-            this.is_gc_mode = false;
             this.is_ge_mode = true;
-            this.is_paga_mode = false;
             this.loadGeneTable();
         } else if (this.curr_mode == "Digital_in_situ" ){
-            this.is_ct_mode = false;
             this.is_gc_mode = true;
-            this.is_ge_mode = false;
-            this.is_paga_mode = false;
             this.loadScoexpIds();
         } else if (this.curr_mode == "PAGA_trajectory" ){
-            this.is_ct_mode = false;
-            this.is_gc_mode = false;
-            this.is_ge_mode = false;
             this.is_paga_mode = true;
             this.loadPAGATraj();
-        } else if (this.curr_mode == "Regulons" ){
-
+        } else if (this.curr_mode == "GRN_Regulons" ){
+            this.is_grn_mode = true;
+            this.loadRegulonsTable();
         } else {
 
         }
@@ -943,8 +1027,17 @@ data() {
         console.log(this.box_scale);
         this.unit1 = 1/this.box_scale;
     },
+    init_options() {
+        if( 'option' in  this.G_Atlas['summary'] ){
+            this.mode_onoff['GRN_Regulons'] = this.G_Atlas['summary']['option']['GRN_Regulons']
+            this.mode_onoff['Hotspot_Modules'] = this.G_Atlas['summary']['option']['Hotspot_Modules']
+            this.mode_onoff['Cell_Cell_Communication'] = this.G_Atlas['summary']['option']['Cell_Cell_Communication']
+            this.mode_onoff['PAGA_trajectory'] = this.G_Atlas['summary']['option']['PAGA_trajectory']
+        }
+    },
     InitAtlas() {
         // Init the celltype setting panel
+        this.init_options();
         this.init_scale();
         this.resetROIdata();
         this.resetMesh()
@@ -1015,8 +1108,81 @@ data() {
         this.update_option_deep();
     },
     // ---- celltype conf panel end -----------------------------------
+    //----------- regulons functions start -------------//
 
-
+    //----------- regulons functions end -------------//
+    loadRegulonsTable(){
+        if ( this.allTableRegulonData.length <1 ) {
+            // 2022-10-10 liyao: load gene id mapping table
+            var self = this;
+            $.getJSON(this.G_Atlas["regulon_url"], function(_data){
+                var td = []
+                for( var i = 0; i<_data.length; i++){
+                    td.push({'regulon_name':_data[i]})
+                }
+                self.tableRegulonData = td;
+                self.allTableRegulonData = td;
+            });
+        }
+    },
+    updateRegulonTable(){
+        var new_tableData = [];
+        var arrayLength = this.allTableRegulonData.length;
+        for (var i = 0; i < arrayLength; i++) {
+            if (this.allTableRegulonData[i]['regulon_name'].includes(this.input_regulon_id)){
+                new_tableData.push(this.allTableRegulonData[i]);
+            }
+        }
+        this.tableRegulonData = new_tableData;
+    },
+    handleRegulonRow(row,event,column){
+        this.input_regulon_id = row.regulon_name;
+        this.updateRegulonTable();
+        this.refreshRegulon(this.input_regulon_id,true);
+    },
+    refreshRegulon(regulon_name, force) { 
+        if ( regulon_name == null || regulon_name == "" ) return; 
+        if (this.curr_regulon_name != regulon_name || force ) {
+            this.regulon_json_raw = null;
+            this.regulon_json_data = null;
+            this.update_option_deep();
+            this.curr_regulon_name = regulon_name;
+            var used_url = this.G_Atlas['regulons_url'] +'/'+this.curr_regulon_name+".json";
+            var self = this;
+            $.getJSON(used_url,function(_data) {
+              self.setRegulonData(_data);
+              self.update_option_deep();
+            });
+        }
+    },
+    setRegulonData(_data){
+        var gene_xyz= [];
+        for(var j=0 ; j< _data.length; j++)
+        {
+            var curr_item = _data[j];
+            if( parseInt(curr_item[3])+1>  this.curr_max_exp)
+                this.curr_max_exp = parseInt(curr_item[3])+1;
+            gene_xyz.push( [curr_item[0]*this.box_scale,curr_item[1]*this.box_scale,curr_item[2]*this.box_scale,curr_item[3]]);
+        }
+        this.regulon_json_raw= gene_xyz;
+        this.updateJsonData();
+    },
+    updateRegulonJsonData(){
+      var curr_draw_datas = [];
+      for(var i =0;i<this.regulon_json_raw.length; i++){
+         var info = this.regulon_json_raw[i]
+         if( info[0]<this.x_min) continue;
+         if( info[1]<this.y_min) continue;
+         if( info[2]<this.z_min) continue;
+         if( info[0]>this.x_max) continue;
+         if( info[1]>this.y_max) continue;
+         if( info[2]>this.z_max) continue;
+         //if( info[3]<this.smallestExpression)continue;
+         //if( info[3]>this.largestExpression)continue;
+         curr_draw_datas.push(info)
+      }
+      this.regulon_json_data = curr_draw_datas;
+    },
     //----------- gene select functions start -------------//
     loadGeneTable(){
         if ( this.allTableData.length <1 ) {
@@ -1645,8 +1811,10 @@ data() {
           this.jsondata = this.rawdata;
       else if (this.curr_mode == "GeneExpression")
           this.gene_json_data = this.gene_json_raw;
-      else
+      else if (this.curr_mode == "Digital_in_situ")
           this.reset_channel_jsons();
+      else if (this.curr_mode == "GRN_Regulons") 
+          this.regulon_json_data  = this.regulon_json_raw
       this.update_option();
     },
     updateJsonData(){
@@ -1654,8 +1822,12 @@ data() {
           this.updateAnnoJsonData();
       else if (this.curr_mode == "GeneExpression")
           this.updateGeneJsonData();
-      else 
+      else if (this.curr_mode == "Digital_in_situ")
           this.updateChannelJsons();
+      else if (this.curr_mode == "GRN_Regulons") 
+          this.updateRegulonJsonData();
+      else
+          return;
     },
     updateChannelJsons(){
         for(var i = 0; i < this.channel_keys.length; i++){
@@ -1678,6 +1850,7 @@ data() {
       }
       this.gene_json_data = curr_draw_datas;
     },
+    
     updateAnnoJsonData(){
       var curr_draw_datas = [];
       for(var i =0;i<this.all_clusters;i++)
@@ -1851,21 +2024,7 @@ data() {
           return null;
         }
     },
-    getGeneExpSerie(){
-        if(this.gene_json_data == null)
-            return null;
-        var legend_name = this.curr_gene;
-        var one_series = {
-            name : this.curr_gene,
-            type : 'scatter3D',
-            dimensions: [ 'x','y','z' ,'exp'],
-            data: this.gene_json_data,
-            symbolSize: this.symbolSize,
-            symbolAlpha: this.symbolAlpha,
-            itemStyle: {
-              borderWidth: 0,
-            },
-        };
+    getColorRange(){
         var color_range = ['blue', 'white', 'red'];
         if ( this.curr_cmap == 'BuYeRd' )
             color_range = ['blue','yellow','red'];
@@ -1884,6 +2043,68 @@ data() {
             else 
                 color_range = ['black','white'];
         }
+        return color_range;
+    },
+    getRegulonSeries(){
+        if(this.regulon_json_data == null)
+            return null;
+        var legend_name = this.curr_regulon_name;
+        var one_series = {
+            name : this.curr_regulon_name,
+            type : 'scatter3D',
+            dimensions: [ 'x','y','z' ,'regulon'],
+            data: this.regulon_json_data,
+            symbolSize: this.symbolSize,
+            symbolAlpha: this.symbolAlpha,
+            itemStyle: {
+              borderWidth: 0,
+            },
+        };
+        var color_range = this.getColorRange();
+        var visualMap= [
+            {
+                type: 'continuous',
+                min: this.curr_min_exp,
+                max: this.curr_max_exp,
+                range:[ this.curr_min_exp,this.curr_max_exp],  
+                dimension: 3, // the fourth dimension of series.data (i.e. value[3]) is mapped
+                seriesIndex: 0, // The first series is mapped.
+                orient: 'vertical',
+                right: 5,
+                top: 'center',
+                calculable: true,
+                realtime:false,
+                inRange: {
+                    color: color_range,
+                },
+                textStyle: {
+                    color: '#cccccc'
+                },
+        }];
+        
+        var ret = {
+            legend_name : legend_name,
+            one_series : one_series,
+            visualMap:visualMap,
+        };
+        return ret ;
+    },
+    getGeneExpSerie(){
+        if(this.gene_json_data == null)
+            return null;
+        var legend_name = this.curr_gene;
+        var one_series = {
+            name : this.curr_gene,
+            type : 'scatter3D',
+            dimensions: [ 'x','y','z' ,'exp'],
+            data: this.gene_json_data,
+            symbolSize: this.symbolSize,
+            symbolAlpha: this.symbolAlpha,
+            itemStyle: {
+              borderWidth: 0,
+            },
+        };
+        var color_range = this.getColorRange();
         if ( this.use_virtual_alpha == false ){
             var visualMap= [
                 {
@@ -2098,6 +2319,7 @@ data() {
       var gene_exp_serie = null;
       var channel_series = null;
       var paga_series = null
+      var regulon_series = null;
       mesh_serie = this.getMeshSerie();
       if( this.curr_mode == "CellTypes" ) 
           scatter_series = this.getScatterSeries();
@@ -2107,9 +2329,10 @@ data() {
           channel_series = this.getChannelSeries();
       else if ( this.curr_mode == "PAGA_trajectory" )
           paga_series = this.getPAGASeries();
-      
+      else if (this.curr_mode == "GRN_Regulons")
+          regulon_series = this.getRegulonSeries()
       // Draw loading if necessary
-      if ( mesh_serie == null && scatter_series == null && gene_exp_serie == null && channel_series == null && paga_series == null) {
+      if ( mesh_serie == null && scatter_series == null && gene_exp_serie == null && channel_series == null && paga_series == null && regulon_series == null) {
           this.data_valid = false;
           this.model_only = true;
           return this.getLoadingOption(bk_color,ft_color);
@@ -2170,6 +2393,17 @@ data() {
                for(var i = 0; i < paga_series.legend_list.length; i++){
                    legend_list.push(paga_series.legend_list[i]);
                }
+               this.data_valid = true;
+               this.model_only = false;
+           } else {
+                this.data_valid = false;
+                this.model_only = true;
+           }
+        } else if ( this.curr_mode == "GRN_Regulons" ) {
+           if( regulon_series !=null){
+               series_list.push(regulon_series.one_series);
+               legend_list.push(regulon_series.legend_name);
+               legend_show[regulon_series.legend_name] = true;
                this.data_valid = true;
                this.model_only = false;
            } else {
@@ -2314,6 +2548,9 @@ data() {
         if ( this.curr_mode == "GeneExpression" && gene_exp_serie != null ){
             opt.visualMap = gene_exp_serie.visualMap;
         }
+        if ( this.curr_mode == "GRN_Regulons" && regulon_series != null ){
+            opt.visualMap = regulon_series.visualMap;
+        }
         console.log('reset option');
         return opt;
       } // end of else.
@@ -2359,5 +2596,12 @@ data() {
   z-index: 99999;
   top: 0;
   left: 0;
+}
+.el-table .warning-row {
+    color: white;
+}
+
+.el-table .success-row {
+    color: black;
 }
 </style>

@@ -55,12 +55,16 @@ export default {
     atlas['main_url']    = baseurl;
     atlas['summary_url'] = baseurl + '/summary.json';
     atlas['gene_url']    = baseurl + '/gene.json';
+    atlas['regulon_url'] = baseurl + '/regulon.json';
+    atlas['hotspot_url'] = baseurl + '/hotspot.json';
     atlas['meshes_url']  = baseurl + '/meshes.json';
     atlas['conf_url']    = baseurl + '/conf.json';
     atlas['paga_url']    = baseurl + '/paga.json';
     atlas['paga_line_url']  = baseurl + '/paga_line.json';
     atlas['anno_url']    = baseurl + '/Anno';
     atlas['genes_url']   = baseurl + '/Gene';
+    atlas['regulons_url'] = baseurl + '/Regulon';
+    atlas['hotspots_url'] = baseurl + '/Hotspot';
     atlas['scoexp_url']  = baseurl + '/gene_scoexp';
     this.G_Atlas = atlas;
     var self = this;
