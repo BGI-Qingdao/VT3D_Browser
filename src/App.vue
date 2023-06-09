@@ -56,6 +56,7 @@ export default {
     atlas['summary_url'] = baseurl + '/summary.json';
     atlas['gene_url']    = baseurl + '/gene.json';
     atlas['regulon_url'] = baseurl + '/regulon.json';
+    atlas['ccc_dict_url'] = baseurl + '/ccc_dict.json'
     atlas['hotspot_url'] = baseurl + '/hotspot.json';
     atlas['meshes_url']  = baseurl + '/meshes.json';
     atlas['conf_url']    = baseurl + '/conf.json';
@@ -65,6 +66,7 @@ export default {
     atlas['genes_url']   = baseurl + '/Gene';
     atlas['regulons_url'] = baseurl + '/Regulon';
     atlas['hotspots_url'] = baseurl + '/Hotspot';
+    atlas['ccc_url'] = baseurl + '/CCC';
     atlas['scoexp_url']  = baseurl + '/gene_scoexp';
     this.G_Atlas = atlas;
     var self = this;

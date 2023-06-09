@@ -302,6 +302,59 @@
                             </div>
                          </div>
                          <!-- ----------regulon mode end --------------------------------------------------------------- -->
+                         <!-- ----------CCC mode start--------------------------------------------------------------- -->
+                         <div align="center"  v-show="is_ccc_mode" style="margin:3px; border: 3px solid #ccc;">
+                            <div align="left" style="margin-left:10px;">
+                                <el-row style="margin-top:1px;margin-bottom:1px">
+                                    <span class='mspan'>Choose an sender:</span>
+                                </el-row>
+                                <el-select  v-model="curr_sender" placeholder="" @change="onChangeSender">
+                                        <el-option
+                                          v-for="(value, key) in ccc_data"
+                                          :key="key"
+                                          :label="key"
+                                          :value="key">
+                                        </el-option>
+                                </el-select>
+                                <el-row v-show="curr_sender != empty_str" style="margin-top:1px;margin-bottom:1px">
+                                    <span class='mspan'>Choose an reciver:</span>
+                                </el-row>
+                                <el-select v-show="curr_sender!=empty_str"  v-model="curr_reciver" placeholder="" @change="onChangeReciver">
+                                        <el-option
+                                          v-for="(value, key) in reciver_data"
+                                          :key="key"
+                                          :label="key"
+                                          :value="key">
+                                        </el-option>
+                                </el-select>
+                                <el-row v-show="curr_reciver!=empty_str" style="margin-top:1px;margin-bottom:1px">
+                                    <span class='mspan'>Choose an ligand:</span>
+                                </el-row>
+                                <el-select v-show="curr_reciver!=empty_str"  v-model="curr_ligand" placeholder="" @change="onChangeLigand">
+                                        <el-option
+                                          v-for="(value, key) in ligand_data"
+                                          :key="key"
+                                          :label="key"
+                                          :value="key">
+                                        </el-option>
+                                </el-select>
+                                <el-row v-show="curr_ligand!=empty_str" style="margin-top:1px;margin-bottom:1px">
+                                    <span class='mspan'>Choose an receptor:</span>
+                                </el-row>
+                                <el-select v-show="curr_ligand!=empty_str"  v-model="curr_receptor" placeholder="">
+                                        <el-option
+                                          v-for="item in receptor_data"
+                                          :key="item"
+                                          :label="item"
+                                          :value="item">
+                                        </el-option>
+                                </el-select>
+                                <el-row v-show="curr_receptor!=empty_str" style="margin-top:1px;margin-bottom:1px" >
+                                    <el-button type="success" @click.native="LoadLRGenes">Submit</el-button>
+                                </el-row>
+                            </div>
+                         </div>
+                         <!-- ----------CCC mode end--------------------------------------------------------------- -->
                          <!-- ----------digital in situ mode start--------------------------------------------------------------- -->
                          <div align="center"  v-show="is_gc_mode" style="margin:3px; border: 3px solid #ccc;">
                             <el-row style="margin-top:3px;margin-bottom:2px">
@@ -732,6 +785,7 @@ data() {
       is_gc_mode: false,
       is_paga_mode:false,
       is_grn_mode: false,
+      is_ccc_mode : false,
       box_scale: 0,
       unit1 :1,
       // working mode end ----------------------------------------
@@ -775,7 +829,31 @@ data() {
       regulon_json_raw : null,
       regulon_json_data : null,
       //------------regulon end------
-     
+      //------------cell-cell communication start ------
+      ccc_data: {
+          "loading data" :{} 
+      },
+      reciver_data: {
+          "loading data" :{} 
+      },
+      ligand_data: {
+          "loading data" :{} 
+      },
+      receptor_data:[],
+      empty_str :'',
+      curr_sender : '',
+      curr_reciver: '',
+      curr_ligand: '',
+      curr_receptor:'',
+      ligand_json_raw:null,
+      ligand_json_data: null,
+      receptor_json_raw:null,
+      receptor_json_data:null,
+      ligand_exp_min : 0,
+      ligand_exp_max : 3,
+      receptor_exp_min : 0,
+      receptor_exp_max : 3, 
+      //------------cell-cell communication end------
       //------------gene expression selection start------
       all_cmaps: [
           "BuYeRd",
@@ -801,7 +879,7 @@ data() {
       use_virtual_alpha: false,
       fish_url:null,
       //------------gene expression selection end------
-
+      
       //------------channel selection start------
       input_gene_red:     '',
       input_gene_green:   '',
@@ -985,6 +1063,7 @@ data() {
         this.is_ge_mode = false;
         this.is_grn_mode = false;
         this.is_paga_mode = false;
+        this.is_ccc_mode = false;
     },
     OnChangeMode(){
         this.mode_title = this.curr_mode+" setting";
@@ -1008,8 +1087,11 @@ data() {
         } else if (this.curr_mode == "GRN_Regulons" ){
             this.is_grn_mode = true;
             this.loadRegulonsTable();
+        } else if (this.curr_mode == "Cell_Cell_Communication" ){
+            this.is_ccc_mode = true;
+            this.loadCCCTable();
         } else {
-
+            
         }
     },
     // ------------------ basic conf functions end----------------------
@@ -1108,17 +1190,131 @@ data() {
         this.update_option_deep();
     },
     // ---- celltype conf panel end -----------------------------------
+    //----------- CCC functions start -------------//
+    loadCCCTable(){
+        if ( "loading data" in this.ccc_data ){
+            var self = this;
+            console.log('loading CCC dict ... ')
+            $.getJSON(this.G_Atlas["ccc_dict_url"], function(_data){
+                self.ccc_data = _data
+                console.log('CCC dict loaded!!!')
+            });
+        }
+    },
+    onChangeSender(){
+        this.reciver_data = this.ccc_data[this.curr_sender]
+        this.curr_reciver = ''
+        this.curr_ligand = ''
+        this.curr_receptor = ''
+    },
+    onChangeReciver(){
+        this.ligand_data =  this.reciver_data[this.curr_reciver]
+        this.curr_ligand = ''
+        this.curr_receptor = ''
+    },
+    onChangeLigand(){
+        this.receptor_data = this.ligand_data[this.curr_ligand]
+        this.curr_receptor = ''
+    },
+    SetLigandData(_data){
+        console.log('ligand loaded')
+        var gene_xyz= [];
+        for(var j=0 ; j< _data.length; j++)
+        {
+            var curr_item = _data[j];
+            if( parseInt(curr_item[3])+1>  this.ligand_exp_max)
+                this.ligand_exp_max = parseInt(curr_item[3])+1;
+            gene_xyz.push( [curr_item[0]*this.box_scale,curr_item[1]*this.box_scale,curr_item[2]*this.box_scale,curr_item[3]]);
+        }
+        this.ligand_json_raw= gene_xyz;
+        //console.log(this.ligand_json_raw)
+        this.updateJsonData();
+    },
+    updateLigandJsonData(){
+      var curr_draw_datas = [];
+      for(var i =0;i<this.ligand_json_raw.length; i++){
+         var info = this.ligand_json_raw[i]
+         if( info[0]<this.x_min) continue;
+         if( info[1]<this.y_min) continue;
+         if( info[2]<this.z_min) continue;
+         if( info[0]>this.x_max) continue;
+         if( info[1]>this.y_max) continue;
+         if( info[2]>this.z_max) continue;
+         //if( info[3]<this.smallestExpression)continue;
+         //if( info[3]>this.largestExpression)continue;
+         curr_draw_datas.push(info)
+      }
+      this.ligand_json_data = curr_draw_datas;
+    },
+    updateReceptorJsonData(){
+      var curr_draw_datas = [];
+      for(var i =0;i<this.receptor_json_raw.length; i++){
+         var info = this.receptor_json_raw[i]
+         if( info[0]<this.x_min) continue;
+         if( info[1]<this.y_min) continue;
+         if( info[2]<this.z_min) continue;
+         if( info[0]>this.x_max) continue;
+         if( info[1]>this.y_max) continue;
+         if( info[2]>this.z_max) continue;
+         //if( info[3]<this.smallestExpression)continue;
+         //if( info[3]>this.largestExpression)continue;
+         curr_draw_datas.push(info)
+      }
+      this.receptor_json_data = curr_draw_datas;
+    },
+    updateCCCJsonData(){
+        if(this.receptor_json_raw != null )
+            this.updateReceptorJsonData()
+        else
+            this.receptor_json_data = null
+        if(this.ligand_json_raw != null)
+            this.updateLigandJsonData()
+        else
+            this.ligand_json_data = null
+    },
+    SetReceptorData(_data){
+        console.log('receptor loaded')
+        var gene_xyz= [];
+        for(var j=0 ; j< _data.length; j++)
+        {
+            var curr_item = _data[j];
+            if( parseInt(curr_item[3])+1>  this.receptor_exp_max)
+                this.receptor_exp_max = parseInt(curr_item[3])+1;
+            gene_xyz.push( [curr_item[0]*this.box_scale,curr_item[1]*this.box_scale,curr_item[2]*this.box_scale,curr_item[3]]);
+        }
+        this.receptor_json_raw= gene_xyz;
+        //console.log(this.receptor_json_raw)
+        this.updateJsonData();
+    },
+    LoadLRGenes(){
+        this.ligand_json_raw = null;
+        this.receptor_json_raw = null;
+        var self = this;
+        console.log('loading lr genes ... ')
+        var ligand_url = this.G_Atlas["ccc_url"]+'/'+this.curr_sender+'/'+this.curr_ligand+'.json'
+        var receptor_url = this.G_Atlas["ccc_url"]+'/'+this.curr_reciver+'/'+this.curr_receptor+'.json'
+        $.getJSON(ligand_url, function(_data){
+            self.SetLigandData(_data)
+            self.update_option()
+        });
+        $.getJSON(receptor_url, function(_data){
+            self.SetReceptorData(_data)
+            self.update_option()
+        });
+        this.updateJsonData()
+        self.update_option_deep()
+    },
+    //----------- CCC functions end -------------//
+
     //----------- regulons functions start -------------//
 
-    //----------- regulons functions end -------------//
     loadRegulonsTable(){
         if ( this.allTableRegulonData.length <1 ) {
-            // 2022-10-10 liyao: load gene id mapping table
             var self = this;
             $.getJSON(this.G_Atlas["regulon_url"], function(_data){
                 var td = []
                 for( var i = 0; i<_data.length; i++){
-                    td.push({'regulon_name':_data[i]})
+                    td.push({'regulon_name':_data[i].replace("___","(+)")})
                 }
                 self.tableRegulonData = td;
                 self.allTableRegulonData = td;
@@ -1135,11 +1331,13 @@ data() {
         }
         this.tableRegulonData = new_tableData;
     },
+
     handleRegulonRow(row,event,column){
         this.input_regulon_id = row.regulon_name;
         this.updateRegulonTable();
         this.refreshRegulon(this.input_regulon_id,true);
     },
+
     refreshRegulon(regulon_name, force) { 
         if ( regulon_name == null || regulon_name == "" ) return; 
         if (this.curr_regulon_name != regulon_name || force ) {
@@ -1147,7 +1345,7 @@ data() {
             this.regulon_json_data = null;
             this.update_option_deep();
             this.curr_regulon_name = regulon_name;
-            var used_url = this.G_Atlas['regulons_url'] +'/'+this.curr_regulon_name+".json";
+            var used_url = this.G_Atlas['regulons_url'] +'/'+this.curr_regulon_name.replace("(+)","___")+".json";
             var self = this;
             $.getJSON(used_url,function(_data) {
               self.setRegulonData(_data);
@@ -1155,6 +1353,7 @@ data() {
             });
         }
     },
+
     setRegulonData(_data){
         var gene_xyz= [];
         for(var j=0 ; j< _data.length; j++)
@@ -1167,6 +1366,7 @@ data() {
         this.regulon_json_raw= gene_xyz;
         this.updateJsonData();
     },
+
     updateRegulonJsonData(){
       var curr_draw_datas = [];
       for(var i =0;i<this.regulon_json_raw.length; i++){
@@ -1183,6 +1383,8 @@ data() {
       }
       this.regulon_json_data = curr_draw_datas;
     },
+    //----------- regulons functions end -------------//
+
     //----------- gene select functions start -------------//
     loadGeneTable(){
         if ( this.allTableData.length <1 ) {
@@ -1198,6 +1400,7 @@ data() {
             });
         }
     },
+
     updateTable(){
         // 2022-10-10  liyao:search gene
         var new_tableData = [];
@@ -1798,7 +2001,7 @@ data() {
       this.x_max = this.getXMax();
       this.y_max = this.getYMax();
       this.z_max = this.getZMax();
-      this.tmp_x_max = this.x_max; 
+      this.tmp_x_max = this.x_max;
       this.tmp_y_max = this.y_max;
       this.tmp_z_max = this.z_max;
     },
@@ -1826,6 +2029,8 @@ data() {
           this.updateChannelJsons();
       else if (this.curr_mode == "GRN_Regulons") 
           this.updateRegulonJsonData();
+      else if (this.curr_mode == "Cell_Cell_Communication")
+          this.updateCCCJsonData();
       else
           return;
     },
@@ -2045,7 +2250,7 @@ data() {
         }
         return color_range;
     },
-    getRegulonSeries(){
+    getRegulonSerie(){
         if(this.regulon_json_data == null)
             return null;
         var legend_name = this.curr_regulon_name;
@@ -2194,6 +2399,7 @@ data() {
         if(series_list.length <1 ) return null;
         return ret;
     },
+
     getScatterSeries(){
         if(this.jsondata == null)
             return null;
@@ -2237,6 +2443,99 @@ data() {
             series_list : series_list,
             legend_list : legend_list,
             legend_show : legend_show,
+        };
+        return ret;
+    },
+    getCCCSeries() {
+        if( this.ligand_json_data == null || this.receptor_json_data == null)
+            return null;
+        console.log('draw CCC now');
+        var send_name = this.curr_sender+'('+this.curr_ligand+')';
+        var send_series = {
+            name : send_name,
+            type : 'scatter3D',
+            dimensions: [ 'x','y','z' ,'exp'],
+            data: this.ligand_json_data,
+            symbolSize: this.symbolSize,
+            symbolAlpha: this.symbolAlpha,
+            itemStyle: {
+              borderWidth: 0,
+            },
+        };
+        var reciv_name = this.curr_reciver+'('+this.curr_receptor+')';
+        var reciv_series = {
+            name : reciv_name,
+            type : 'scatter3D',
+            dimensions: [ 'x','y','z' ,'exp'],
+            data: this.receptor_json_data,
+            symbolSize: this.symbolSize,
+            symbolAlpha: this.symbolAlpha,
+            itemStyle: {
+              borderWidth: 0,
+            },
+        };
+        var sender_range = []
+        var reciv_range = []
+        if ( this.black_background == false )
+             sender_range = ['white','red','darkred'];
+        else 
+             sender_range = ['black','red','darkred'];
+        var sendVisualMap= {
+                type: 'continuous',
+                min: this.ligand_exp_min,
+                max: this.ligand_exp_max,
+                range:[ this.ligand_exp_min,this.ligand_exp_max],  
+                dimension: 3, // the fourth dimension of series.data (i.e. value[3]) is mapped
+                seriesIndex: 0, // The first series is mapped.
+                orient: 'vertical',
+                right: 5,
+                top: 'center',
+                calculable: true,
+                realtime:false,
+                inRange: {
+                    color: sender_range,
+                },
+                textStyle: {
+                    color: '#cccccc'
+                },
+        };
+        if ( this.black_background == false )
+            reciv_range = ['white','green','darkgreen'];
+        else 
+            reciv_range = ['black','green','darkgreen'];
+
+        var recivVisualMap= {
+                type: 'continuous',
+                min: this.receptor_exp_min,
+                max: this.receptor_exp_max,
+                range:[ this.receptor_exp_min,this.receptor_exp_max],  
+                dimension: 3, // the fourth dimension of series.data (i.e. value[3]) is mapped
+                seriesIndex: 1, // The first series is mapped.
+                orient: 'vertical',
+                left: 5,
+                top: 'center',
+                calculable: true,
+                realtime:false,
+                inRange: {
+                    color: reciv_range,
+                },
+                textStyle: {
+                    color: '#cccccc'
+                },
+        };
+        var series_list = [];
+        var legend_list = [];
+        var map_list = []
+        series_list.push(send_series)
+        series_list.push(reciv_series)
+        legend_list.push(send_name)
+        legend_list.push(reciv_name)
+        map_list.push(sendVisualMap)
+        map_list.push(recivVisualMap)
+        var ret = {
+            series_list : series_list,
+            legend_list : legend_list,
+            map_list :map_list ,
         };
         return ret;
     },
@@ -2319,7 +2618,8 @@ data() {
       var gene_exp_serie = null;
       var channel_series = null;
       var paga_series = null
-      var regulon_series = null;
+      var regulon_serie = null;
+      var ccc_series = null;
       mesh_serie = this.getMeshSerie();
       if( this.curr_mode == "CellTypes" ) 
           scatter_series = this.getScatterSeries();
@@ -2330,9 +2630,11 @@ data() {
       else if ( this.curr_mode == "PAGA_trajectory" )
           paga_series = this.getPAGASeries();
       else if (this.curr_mode == "GRN_Regulons")
-          regulon_series = this.getRegulonSeries()
+          regulon_serie = this.getRegulonSerie()
+      else if (this.curr_mode == "Cell_Cell_Communication")
+          ccc_series = this.getCCCSeries()
       // Draw loading if necessary
-      if ( mesh_serie == null && scatter_series == null && gene_exp_serie == null && channel_series == null && paga_series == null && regulon_series == null) {
+      if ( mesh_serie == null && scatter_series == null && gene_exp_serie == null && channel_series == null && paga_series == null && regulon_serie == null && ccc_series == null) {
           this.data_valid = false;
           this.model_only = true;
           return this.getLoadingOption(bk_color,ft_color);
@@ -2385,6 +2687,20 @@ data() {
                 this.data_valid = false;
                 this.model_only = true;
            }
+        } else if (this.curr_mode == "Cell_Cell_Communication") {
+          if(ccc_series != null){
+               for(var i = 0; i < ccc_series.series_list.length; i++){
+                   series_list.push(ccc_series.series_list[i])
+                   console.log(1)
+               }
+               for(var i = 0; i < ccc_series.legend_list.length; i++){
+                   legend_list.push(ccc_series.legend_list[i]);
+                   console.log(2)
+               }
+          }else {
+            this.data_valid = false;
+            this.model_only = true;
+          }   
         } else if ( this.curr_mode == "PAGA_trajectory" ) {
            if( paga_series!=null){
                for(var i = 0; i < paga_series.series_list.length; i++){
@@ -2400,10 +2716,10 @@ data() {
                 this.model_only = true;
            }
         } else if ( this.curr_mode == "GRN_Regulons" ) {
-           if( regulon_series !=null){
-               series_list.push(regulon_series.one_series);
-               legend_list.push(regulon_series.legend_name);
-               legend_show[regulon_series.legend_name] = true;
+           if( regulon_serie !=null){
+               series_list.push(regulon_serie.one_series);
+               legend_list.push(regulon_serie.legend_name);
+               legend_show[regulon_serie.legend_name] = true;
                this.data_valid = true;
                this.model_only = false;
            } else {
@@ -2548,8 +2864,11 @@ data() {
         if ( this.curr_mode == "GeneExpression" && gene_exp_serie != null ){
             opt.visualMap = gene_exp_serie.visualMap;
         }
-        if ( this.curr_mode == "GRN_Regulons" && regulon_series != null ){
-            opt.visualMap = regulon_series.visualMap;
+        if ( this.curr_mode == "GRN_Regulons" && regulon_serie != null ){
+            opt.visualMap = regulon_serie.visualMap;
+        }
+        if (this.curr_mode == "Cell_Cell_Communication" && ccc_series != null){
+            opt.visualMap =ccc_series.map_list;
         }
         console.log('reset option');
         return opt;
