@@ -352,6 +352,58 @@
                                 <el-row v-show="curr_receptor!=empty_str" style="margin-top:1px;margin-bottom:1px" >
                                     <el-button type="success" @click.native="LoadLRGenes">Submit</el-button>
                                 </el-row>
+                                <el-row style="margin-top:3px;margin-bottom:2px">
+                                    <el-col :span="8" >
+                                       <span  class='mspan'>s cmap:</span>
+                                    </el-col>
+                                    <el-col :span="16" >
+                                        <el-select  v-model="sender_cmap" placeholder="sender_cmap" @change="refresh">
+                                          <el-option
+                                            v-for="item in one_cmaps"
+                                            :key="item"
+                                            :label="item"
+                                            :value="item">
+                                          </el-option>
+                                        </el-select>
+                                    </el-col>
+                                </el-row>
+                                <el-row style="margin-top:3px;margin-bottom:2px">
+                                    <el-col :span="8" >
+                                       <span  class='mspan'>r cmap:</span>
+                                    </el-col>
+                                    <el-col :span="16" >
+                                        <el-select  v-model="reciv_cmap" placeholder="reciv_cmap" @change="refresh">
+                                          <el-option
+                                            v-for="item in one_cmaps"
+                                            :key="item"
+                                            :label="item"
+                                            :value="item">
+                                          </el-option>
+                                        </el-select>
+                                    </el-col>
+                                </el-row>
+                                <el-row style="margin-top:3px;margin-bottom:2px">
+                                    <el-col :span="6" >
+                                       <span  class='mspan'>s vmax:</span>
+                                    </el-col>
+                                    <el-col :span="8" >
+                                        <el-input v-model="tmp_svmax" placeholder="0"></el-input>
+                                    </el-col>
+                                    <el-col :span="10" >
+                                        <el-button type="success" @click.native="changeSVmax">Apply</el-button>
+                                    </el-col>
+                                </el-row>
+                                <el-row style="margin-top:3px;margin-bottom:2px">
+                                    <el-col :span="6" >
+                                       <span  class='mspan'>r vmax:</span>
+                                    </el-col>
+                                    <el-col :span="8" >
+                                        <el-input v-model="tmp_rvmax" placeholder="0"></el-input>
+                                    </el-col>
+                                    <el-col :span="10" >
+                                        <el-button type="success" @click.native="changeRVmax">Apply</el-button>
+                                    </el-col>
+                                </el-row>
                             </div>
                          </div>
                          <!-- ----------CCC mode end--------------------------------------------------------------- -->
@@ -841,10 +893,16 @@ data() {
       },
       receptor_data:[],
       empty_str :'',
+      sender_cmap: 'Reds',
+      reciv_cmap: 'Greens',
       curr_sender : '',
       curr_reciver: '',
       curr_ligand: '',
       curr_receptor:'',
+      tmp_rvmax:3,
+      curr_rvmax:3,
+      tmp_svmax:3,
+      curr_svmax:3,
       ligand_json_raw:null,
       ligand_json_data: null,
       receptor_json_raw:null,
@@ -860,7 +918,18 @@ data() {
           "Reds",
           "Hots",
           "Cool",
-          "Binary"
+          "Binary",
+          "Purples",
+          "Blues",
+          "Oranges",
+          "Greens"
+      ],
+      one_cmaps:[
+          "Reds",
+          "Purples",
+          "Blues",
+          "Oranges",
+          "Greens"
       ],
       // 2022-10-10, gene table data
       allTableData: [],
@@ -1227,8 +1296,22 @@ data() {
             gene_xyz.push( [curr_item[0]*this.box_scale,curr_item[1]*this.box_scale,curr_item[2]*this.box_scale,curr_item[3]]);
         }
         this.ligand_json_raw= gene_xyz;
+        this.curr_svmax = this.ligand_exp_max;
+        this.tmp_svmax = this.curr_svmax;
         //console.log(this.ligand_json_raw)
         this.updateJsonData();
+    },
+    changeSVmax() {
+        if(this.tmp_svmax<0.1){
+            this.curr_svmax = 0.1;
+            this.tmp_svmax = 0.1;
+        } else if (this.tmp_svmax > this.ligand_exp_max){
+            this.curr_svmax = this.ligand_exp_max;
+            this.tmp_svmax = this.ligand_exp_max;
+        } else {
+            this.curr_svmax = this.tmp_svmax;
+        }
+        this.refresh()
     },
     updateLigandJsonData(){
       var curr_draw_datas = [];
@@ -1283,8 +1366,22 @@ data() {
             gene_xyz.push( [curr_item[0]*this.box_scale,curr_item[1]*this.box_scale,curr_item[2]*this.box_scale,curr_item[3]]);
         }
         this.receptor_json_raw= gene_xyz;
+        this.curr_rvmax = this.receptor_exp_max;
+        this.tmp_rvmax = this.curr_rvmax;
         //console.log(this.receptor_json_raw)
         this.updateJsonData();
+    },
+    changeRVmax() {
+        if(this.tmp_rvmax<0.1){
+            this.curr_rvmax = 0.1;
+            this.tmp_rvmax = 0.1;
+        } else if (this.tmp_rvmax > this.receptor_exp_max){
+            this.curr_rvmax = this.receptor_exp_max;
+            this.tmp_rvmax = this.receptor_exp_max;
+        } else {
+            this.curr_rvmax = this.tmp_rvmax;
+        }
+        this.refresh()
     },
     LoadLRGenes(){
         this.ligand_json_raw = null;
@@ -2229,20 +2326,29 @@ data() {
           return null;
         }
     },
-    getColorRange(){
+    getColorRange(ckey){
         var color_range = ['blue', 'white', 'red'];
-        if ( this.curr_cmap == 'BuYeRd' )
+        if ( ckey  == 'BuYeRd' ) {
             color_range = ['blue','yellow','red'];
-        else if ( this.curr_cmap == 'Reds' ) {
-            if ( this.black_background == false )
-                color_range = ['white','red','darkred'];
-            else 
-                color_range = ['black','red','darkred'];
-        } else if ( this.curr_cmap == 'Hots' ) {
+        } else if (ckey  == 'Purples' ) {
+            color_range = ['#fcfbfd', '#dadaeb', '#9e9bc8', '#6a51a3', '#3f007d'];   
+        } else if ( ckey == 'Oranges' ) {
+            color_range = ['#fff5eb', '#fdd1a3', '#fd8e3d', '#d94801', '#7f2704'];
+        } else if ( ckey == 'Blues' ) {
+            color_range = ['#f7fbff', '#c7dbef', '#6caed6', '#2171b5', '#08306b'];
+        } else if ( ckey == 'Greens' ) {
+            color_range = [ '#f7fcf5','#c8e9c1','#75c477','#238b45','#00441b'];
+        } else if ( ckey == 'Reds' ) {
+            color_range = ['#fff5f0','#fcbca2','#fb6b4b','#cb181d','#67000d'];
+            //if ( this.black_background == false )
+            //    color_range = ['white','red','darkred'];
+            //else 
+            //    color_range = ['black','red','darkred'];
+        } else if ( ckey == 'Hots' ) {
             color_range = ['black','red','yellow','white'];
-        } else if ( this.curr_cmap == "Cool" ){
+        } else if ( ckey == "Cool" ){
             color_range = ['cyan','magenta'];
-        } else if ( this.curr_cmap == "Binary" ){
+        } else if ( ckey == "Binary" ){
             if ( this.black_background == false )
                 color_range = ['white','black'];
             else 
@@ -2265,7 +2371,7 @@ data() {
               borderWidth: 0,
             },
         };
-        var color_range = this.getColorRange();
+        var color_range = this.getColorRange(this.curr_cmap);
         var visualMap= [
             {
                 type: 'continuous',
@@ -2309,7 +2415,7 @@ data() {
               borderWidth: 0,
             },
         };
-        var color_range = this.getColorRange();
+        var color_range = this.getColorRange(this.curr_cmap);
         if ( this.use_virtual_alpha == false ){
             var visualMap= [
                 {
@@ -2476,15 +2582,12 @@ data() {
         };
         var sender_range = []
         var reciv_range = []
-        if ( this.black_background == false )
-             sender_range = ['white','red','darkred'];
-        else 
-             sender_range = ['black','red','darkred'];
+        sender_range = this.getColorRange(this.sender_cmap);
         var sendVisualMap= {
                 type: 'continuous',
                 min: this.ligand_exp_min,
-                max: this.ligand_exp_max,
-                range:[ this.ligand_exp_min,this.ligand_exp_max],  
+                max: this.curr_svmax,
+                range:[ this.ligand_exp_min,this.curr_svmax],  
                 dimension: 3, // the fourth dimension of series.data (i.e. value[3]) is mapped
                 seriesIndex: 0, // The first series is mapped.
                 orient: 'vertical',
@@ -2499,16 +2602,13 @@ data() {
                     color: '#cccccc'
                 },
         };
-        if ( this.black_background == false )
-            reciv_range = ['white','green','darkgreen'];
-        else 
-            reciv_range = ['black','green','darkgreen'];
+        reciv_range = this.getColorRange(this.reciv_cmap);
 
         var recivVisualMap= {
                 type: 'continuous',
                 min: this.receptor_exp_min,
-                max: this.receptor_exp_max,
-                range:[ this.receptor_exp_min,this.receptor_exp_max],  
+                max: this.curr_rvmax,
+                range:[ this.receptor_exp_min,this.curr_rvmax],  
                 dimension: 3, // the fourth dimension of series.data (i.e. value[3]) is mapped
                 seriesIndex: 1, // The first series is mapped.
                 orient: 'vertical',
