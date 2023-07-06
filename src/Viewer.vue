@@ -299,6 +299,17 @@
                                       </el-select>
                                   </el-col>
                               </el-row>
+                              <el-row style="margin-top:3px;margin-bottom:2px">
+                                    <el-col :span="6" >
+                                       <span  class='mspan'>vmax:</span>
+                                    </el-col>
+                                    <el-col :span="8" >
+                                        <el-input v-model="tmp_vmax" placeholder="0"></el-input>
+                                    </el-col>
+                                    <el-col :span="10" >
+                                        <el-button type="success" @click.native="changeVmax">Apply</el-button>
+                                    </el-col>
+                                </el-row>
                             </div>
                          </div>
                          <!-- ----------regulon mode end --------------------------------------------------------------- -->
@@ -1180,6 +1191,7 @@ data() {
     },
     init_options() {
         if( 'option' in  this.G_Atlas['summary'] ){
+            this.curr_mode = this.G_Atlas[ 'summary']['option']['default'];
             this.mode_onoff['GRN_Regulons'] = this.G_Atlas['summary']['option']['GRN_Regulons']
             this.mode_onoff['Hotspot_Modules'] = this.G_Atlas['summary']['option']['Hotspot_Modules']
             this.mode_onoff['Cell_Cell_Communication'] = this.G_Atlas['summary']['option']['Cell_Cell_Communication']
@@ -1191,7 +1203,7 @@ data() {
         this.init_options();
         this.init_scale();
         this.resetROIdata();
-        this.resetMesh()
+        this.resetMesh();
         this.OnChangeMode();
     },
     // ---- init atlas basics end ---------------------------------------
@@ -1460,6 +1472,7 @@ data() {
                 this.curr_max_exp = parseInt(curr_item[3])+1;
             gene_xyz.push( [curr_item[0]*this.box_scale,curr_item[1]*this.box_scale,curr_item[2]*this.box_scale,curr_item[3]]);
         }
+        this.tmp_vmax = this.curr_max_exp;
         this.regulon_json_raw= gene_xyz;
         this.updateJsonData();
     },
