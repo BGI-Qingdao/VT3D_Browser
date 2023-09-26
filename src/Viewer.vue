@@ -756,6 +756,66 @@
                           </div>
                           <!-- ----------display setting end--------------------------------------------------------------- -->
                       </el-collapse-item>
+                      <el-collapse-item title="View control:" name="5">
+                        <!-- ----------display setting begin --------------------------------------------------------------- -->
+                        <div align="center" style="margin:3px;  border: 3px solid #ccc;">
+                            <el-row style="margin-top:3px;margin-bottom:2px">
+                                <el-col :span="24" >
+                                    <span  class='mspan'>Current view:</span>
+                                </el-col>
+                            </el-row>
+                            <el-row style="margin-top:3px;margin-bottom:2px">
+                                <el-col :span="24" >
+                                    <span  class='mspan'>Camera distance: {{conf_view_distance}}</span>
+                                </el-col>
+                            </el-row> 
+                            <el-row style="margin-top:3px;margin-bottom:2px">
+                                <el-col :span="24" >
+                                    <span  class='mspan'>Rotate alpha: {{conf_alpha}}</span>
+                                </el-col>
+                            </el-row> 
+                            <el-row style="margin-top:3px;margin-bottom:2px">
+                                <el-col :span="24" >
+                                    <span  class='mspan'>Rotate beta: {{conf_beta}}</span>
+                                </el-col>
+                            </el-row> 
+                            <hr>
+                            <el-row style="margin-top:3px;margin-bottom:2px">
+                                <el-col :span="24" >
+                                    <span  class='mspan'>My setting:</span>
+                                </el-col>
+                            </el-row>
+                            <el-row style="margin-top:3px;margin-bottom:2px">
+                                <el-col :span="12" >
+                                    <span  class='mspan'>Camera distance: </span>
+                                </el-col>
+                                <el-col :span="12" >
+                                      <el-input v-model="tmp_view_distance" placeholder="100"></el-input>
+                                </el-col>
+                            </el-row> 
+                            <el-row style="margin-top:3px;margin-bottom:2px">
+                                <el-col :span="12" >
+                                    <span  class='mspan'>Rotate alpha: </span>
+                                </el-col>
+                                <el-col :span="12" >
+                                      <el-input v-model="tmp_alpha" placeholder="100"></el-input>
+                                </el-col>
+                            </el-row> 
+                            <el-row style="margin-top:3px;margin-bottom:2px">
+                                <el-col :span="12" >
+                                    <span  class='mspan'>Rotate beta: </span>
+                                </el-col>
+                                <el-col :span="12" >
+                                      <el-input v-model="tmp_beta" placeholder="100"></el-input>
+                                </el-col>
+                            </el-row> 
+                            <el-row style="margin-top:3px;margin-bottom:2px">
+                                <el-col :span="24" >
+                                    <el-button type="success" @click.native="SetMyView">Apply</el-button>
+                                </el-col>
+                            </el-row>
+                        </div>
+                      </el-collapse-item>
                   </el-collapse>
                 </div>
               </transition>
@@ -1073,6 +1133,14 @@ data() {
       symbolAlpha:1.0,
       light_intensity:2.0,
       // drawing details conf end----------
+      // view option begin -------------
+      tmp_view_distance:100,
+      tmp_alpha:0,
+      tmp_beta:0,
+      conf_view_distance:100,
+      conf_alpha:0,
+      conf_beta:0,
+      // echarts option end -------------
       // echarts option begin -------------
       chartWidth:'100%',
       model_only:true,
@@ -1100,6 +1168,7 @@ data() {
             },
         }
       },
+      timer:null,
       option_heatmap:null,
     }
   },
@@ -1188,6 +1257,12 @@ data() {
         if( max_length < 100.0 ) this.box_scale = 1.0/max_length*100;
         console.log(this.box_scale);
         this.unit1 = 1/this.box_scale;
+        var curr_distance = 200;
+        if(this.box_scale < 1 ) 
+            curr_distance = 400;
+        else 
+            curr_distance = 150;
+        this.conf_view_distance=curr_distance
     },
     init_options() {
         if( 'option' in  this.G_Atlas['summary'] ){
@@ -1207,6 +1282,8 @@ data() {
         this.OnChangeMode();
     },
     // ---- init atlas basics end ---------------------------------------
+
+
 
     // ---- celltype conf panel begin -----------------------------------
     cleanCellTypeBuffer(){
@@ -1584,7 +1661,6 @@ data() {
       this.drawer_mesh = false;
     },
     applyMeshColor() {
-      console.log(this.currentMeshID)
       this.COLOR_mesh[this.currentMeshID] = this.color;
       this.option=this.getOption() ;
       this.drawer_mesh = false;
@@ -1605,7 +1681,6 @@ data() {
           tmp_clusters[val[i].ID]=1;
       }
       this.saved_meshes =tmp_clusters;
-      console.log(this.saved_meshes)
     },
     resetMeshSelect(){
       this.final_meshes=new Array(this.tableDataMeshes.length).fill(1);
@@ -1671,7 +1746,6 @@ data() {
      this.color = val.hex;
     },
     applyColor(){
-      console.log(this.currentCellID)
       this.COLOR_ALL2[this.currentCellID] = this.color;
       this.option=this.getOption();
       this.drawer = false;
@@ -2059,11 +2133,9 @@ data() {
     resetMesh() {
       this.cleanMesh();
       var used_url = this.G_Atlas['meshes_url'];
-      console.log(used_url);
       var self = this;
       $.getJSON(used_url,function(_data) {
         console.log("mesh loaded");
-        console.log(_data);
         self.setMeshData(_data);
         self.$nextTick(() => {
             self.update_option_deep();
@@ -2202,7 +2274,6 @@ data() {
         else if (txmax<Number(this.x_min)+1)          this.x_max = Number(this.x_min) +1;
         else if (txmax>this.getXMax())                this.x_max = this.getXMax();
         else                                          this.x_max = txmax;
-        console.log(this.x_max);
         this.updateJsonData();
         this.update_option();
       }
@@ -2214,7 +2285,6 @@ data() {
         else if (tymin>this.y_max-1)                  this.y_min = this.y_max-1;
         else if (tymin>this.getYMax()-1)              this.y_min = this.getYMax()-1;
         else                                          this.y_min = tymin;
-        console.log(this.y_min);
         this.updateJsonData();
         this.update_option();
       }
@@ -2226,7 +2296,6 @@ data() {
         else if (tymax<Number(this.y_min)+1)          this.y_max = Number(this.y_min) +1;
         else if (tymax>this.getYMax())                this.y_max = this.getYMax();
         else                                          this.y_max = tymax;
-        console.log(this.y_max);
         this.updateJsonData();
         this.update_option();
       }
@@ -2254,7 +2323,33 @@ data() {
       }
     },
     //-------------configure ROI end -------------------//
+    // ---- view control panel begin -----------------------------------
+    updateView(){
+        var curr_draw_json = this.$refs.myecharts.getOption()
 
+        if ( typeof curr_draw_json != "undefined"
+            && typeof curr_draw_json.grid3D != "undefined"
+            && typeof curr_draw_json.grid3D[0].viewControl != "undefined"
+            && typeof curr_draw_json.grid3D[0].viewControl.distance != "undefined"
+            && parseFloat(curr_draw_json.grid3D[0].viewControl.distance)>10){
+                var conf_view_distance = curr_draw_json.grid3D[0].viewControl.distance;
+                var conf_alpha = curr_draw_json.grid3D[0].viewControl.alpha;
+                var conf_beta = curr_draw_json.grid3D[0].viewControl.beta;
+
+                if (typeof conf_view_distance != "undefined" ){
+                    this.conf_view_distance = conf_view_distance
+                    this.conf_alpha =conf_alpha 
+                    this.conf_beta = conf_beta
+                }
+        }
+    },
+    SetMyView(){
+        this.conf_view_distance = this.tmp_view_distance;
+        this.conf_alpha = this.tmp_alpha;
+        this.conf_beta = this.tmp_beta;
+        this.refresh()
+    },
+    // ---- view control panel end -----------------------------------
     //-------------atlas special conf begin -------------------//
     LoadConfs(){
       var used_url = this.G_Atlas['conf_url'];
@@ -2349,7 +2444,7 @@ data() {
             color_range = ['#fff5eb', '#fdd1a3', '#fd8e3d', '#d94801', '#7f2704'];
         } else if ( ckey == 'Blues' ) {
             color_range = ['#f7fbff', '#c7dbef', '#6caed6', '#2171b5', '#08306b'];
-        } else if ( ckey == 'Greens' ) {
+        } else if ( ckey == 'Greens') {
             color_range = [ '#f7fcf5','#c8e9c1','#75c477','#238b45','#00441b'];
         } else if ( ckey == 'Reds' ) {
             color_range = ['#fff5f0','#fcbca2','#fb6b4b','#cb181d','#67000d'];
@@ -2804,11 +2899,9 @@ data() {
           if(ccc_series != null){
                for(var i = 0; i < ccc_series.series_list.length; i++){
                    series_list.push(ccc_series.series_list[i])
-                   console.log(1)
                }
                for(var i = 0; i < ccc_series.legend_list.length; i++){
                    legend_list.push(ccc_series.legend_list[i]);
-                   console.log(2)
                }
           }else {
             this.data_valid = false;
@@ -2875,11 +2968,7 @@ data() {
             curr_projection = 'perspective';
         else
             curr_projection = 'orthographic';
-        var curr_distance = 200;
-        if(this.box_scale < 1 ) 
-            curr_distance = 400;
-        else 
-            curr_distance = 150;
+
         var opt={
           backgroundColor:bk_color,
           title :{
@@ -2963,8 +3052,10 @@ data() {
           viewControl: {
               projection: curr_projection,
               autoRotate: this.animation,
-              minDistance: 1,
-              distance: curr_distance,
+              distance: parseFloat(this.conf_view_distance),
+              alpha: parseFloat(this.conf_alpha),
+              beta: parseFloat(this.conf_beta),
+              minDistance: 20,
               maxDistance: 2000,
               minAlpha:-3600,
               maxAlpha:3600,
@@ -2973,6 +3064,7 @@ data() {
             }
           },
           series: series_list
+
         }; // end of var opt
         if ( this.curr_mode == "GeneExpression" && gene_exp_serie != null ){
             opt.visualMap = gene_exp_serie.visualMap;
@@ -2992,6 +3084,13 @@ data() {
     window.addEventListener("resize", this.resize_option,true);
     this.InitAtlas();
     this.LoadConfs();
+    if(this.timer){      
+        clearInterval(this.timer)    
+    }else{
+        this.timer = setInterval(()=>{       
+            this.updateView(); 
+        },2000)    
+    }
   },
 };
 </script>
