@@ -168,7 +168,7 @@
                          <div align="center"  v-show="is_ge_mode" style="margin:3px; border: 3px solid #ccc;">
                             <div align="left" style="margin-left:10px;">
                                 <el-row style="margin-top:1px;margin-bottom:1px">
-                                    <span class='mspan'>Please choose an Gene:</span>
+                                    <span class='mspan'>Please choose a gene:</span>
                                 </el-row>
                                 <el-row style="margin-top:3px;margin-bottom:2px">
                                     <el-col :span="16" >
@@ -251,7 +251,7 @@
                          <div align="center"  v-show="is_grn_mode" style="margin:3px; border: 3px solid #ccc;">
                             <div align="left" style="margin-left:10px;">
                                 <el-row style="margin-top:1px;margin-bottom:1px">
-                                    <span class='mspan'>Please choose an regulon:</span>
+                                    <span class='mspan'>Please choose a regulon:</span>
                                 </el-row>
                                 <el-row style="margin-top:3px;margin-bottom:2px">
                                     <el-col :span="16" >
@@ -317,7 +317,7 @@
                          <div align="center"  v-show="is_ccc_mode" style="margin:3px; border: 3px solid #ccc;">
                             <div align="left" style="margin-left:10px;">
                                 <el-row style="margin-top:1px;margin-bottom:1px">
-                                    <span class='mspan'>Choose an sender:</span>
+                                    <span class='mspan'>Choose a sender:</span>
                                 </el-row>
                                 <el-select  v-model="curr_sender" placeholder="" @change="onChangeSender">
                                         <el-option
@@ -328,7 +328,7 @@
                                         </el-option>
                                 </el-select>
                                 <el-row v-show="curr_sender != empty_str" style="margin-top:1px;margin-bottom:1px">
-                                    <span class='mspan'>Choose an reciver:</span>
+                                    <span class='mspan'>Choose a reciver:</span>
                                 </el-row>
                                 <el-select v-show="curr_sender!=empty_str"  v-model="curr_reciver" placeholder="" @change="onChangeReciver">
                                         <el-option
@@ -339,7 +339,7 @@
                                         </el-option>
                                 </el-select>
                                 <el-row v-show="curr_reciver!=empty_str" style="margin-top:1px;margin-bottom:1px">
-                                    <span class='mspan'>Choose an ligand:</span>
+                                    <span class='mspan'>Choose a ligand:</span>
                                 </el-row>
                                 <el-select v-show="curr_reciver!=empty_str"  v-model="curr_ligand" placeholder="" @change="onChangeLigand">
                                         <el-option
@@ -350,7 +350,7 @@
                                         </el-option>
                                 </el-select>
                                 <el-row v-show="curr_ligand!=empty_str" style="margin-top:1px;margin-bottom:1px">
-                                    <span class='mspan'>Choose an receptor:</span>
+                                    <span class='mspan'>Choose a receptor:</span>
                                 </el-row>
                                 <el-select v-show="curr_ligand!=empty_str"  v-model="curr_receptor" placeholder="">
                                         <el-option
