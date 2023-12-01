@@ -3029,7 +3029,7 @@ data() {
             light: {
               main: {
                  shadow: false,
-                 intensity: this.light_intensity,
+                 intensity: 0,
                  quality: 'high'
               },
               ambient:{
