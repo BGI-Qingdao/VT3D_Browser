@@ -985,6 +985,7 @@ data() {
       //------------cell-cell communication end------
       //------------gene expression selection start------
       all_cmaps: [
+          "Color",
           "BuYeRd",
           "Reds",
           "Hots",
@@ -2456,6 +2457,8 @@ data() {
             color_range = ['black','red','yellow','white'];
         } else if ( ckey == "Cool" ){
             color_range = ['cyan','magenta'];
+        } else if ( ckey == "Color" ){
+            color_range = ['#adb5c5','#3e61ab','#6bc9e8','#f5e80b','#ff8000','#e3080b'];
         } else if ( ckey == "Binary" ){
             if ( this.black_background == false )
                 color_range = ['white','black'];
@@ -3129,7 +3132,7 @@ data() {
   left: 0;
 }
 .el-table .warning-row {
-    color: white;
+    color: #0cd3da;
 }
 
 .el-table .success-row {
