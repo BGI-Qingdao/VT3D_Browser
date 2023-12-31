@@ -691,7 +691,7 @@
                                     v-model="projection" @change="refresh" >
                                   </el-switch>
                               </el-row>
-                              <!-- animation end -->
+                              <!-- projection end -->
                               <!-- light intensive start -->
                               <el-row style="margin:3px;">
                                   <el-col :span="8" >
@@ -798,7 +798,7 @@
                                     <span  class='mspan'>Rotate alpha: </span>
                                 </el-col>
                                 <el-col :span="12" >
-                                      <el-input v-model="tmp_alpha" placeholder="100"></el-input>
+                                      <el-input v-model="tmp_alpha" placeholder="0"></el-input>
                                 </el-col>
                             </el-row> 
                             <el-row style="margin-top:3px;margin-bottom:2px">
@@ -806,7 +806,7 @@
                                     <span  class='mspan'>Rotate beta: </span>
                                 </el-col>
                                 <el-col :span="12" >
-                                      <el-input v-model="tmp_beta" placeholder="100"></el-input>
+                                      <el-input v-model="tmp_beta" placeholder="0"></el-input>
                                 </el-col>
                             </el-row> 
                             <el-row style="margin-top:3px;margin-bottom:2px">
@@ -815,6 +815,35 @@
                                 </el-col>
                             </el-row>
                         </div>
+                      </el-collapse-item>
+                      <el-collapse-item title="Animation setting:" name="6">
+                            <!--
+                            <el-row style="margin:3px;">
+                                <el-switch  active-text="Iterate On" inactive-text="Iterate Off"
+                                    v-model="our_animation_iter" @change="OnOurAnimation" >
+                                </el-switch>
+                            </el-row> 
+                            <el-row style="margin-top:3px;margin-bottom:2px">
+                                <el-col :span="12" >
+                                    <span  class='mspan'>Alpha speed: </span>
+                                </el-col>
+                                <el-col :span="12" >
+                                      <el-input v-model="alpha_speed" placeholder="0"></el-input>
+                                </el-col>
+                            </el-row> -->
+                            <el-row style="margin-top:3px;margin-bottom:2px">
+                                <el-col :span="12" >
+                                    <span  class='mspan'>Speed: </span>
+                                </el-col>
+                                <el-col :span="12" >
+                                      <el-input v-model="beta_speed" placeholder="15"></el-input>
+                                </el-col>
+                            </el-row>
+                            <el-row style="margin:3px;">
+                                <el-switch  active-text="Animation On" inactive-text="Animation Off"
+                                    v-model="our_animation" @change="set_global_timer" >
+                                </el-switch>
+                            </el-row>
                       </el-collapse-item>
                   </el-collapse>
                 </div>
@@ -1142,6 +1171,13 @@ data() {
       conf_alpha:0,
       conf_beta:0,
       // echarts option end -------------
+      // animation details begin --------
+      our_animation_iter: true,
+      alpha_speed: 0,
+      beta_speed:1,
+      our_animation:false,
+      our_animation_iter_num:-1,
+      // animation details end ----------
       // echarts option begin -------------
       chartWidth:'100%',
       model_only:true,
@@ -2376,6 +2412,56 @@ data() {
     refresh(){
       this.update_option();
     },
+    //-------------global timer setting begin -------------------//
+    set_global_timer(){
+        if(this.our_animation == false){
+            if(this.timer){      
+                clearInterval(this.timer)    
+            }
+            this.timer = setInterval(()=>{       
+                this.updateView(); 
+            },2000)    
+        } else {
+            if(this.timer){      
+                clearInterval(this.timer)    
+            }
+            setTimeout(() => {
+                this.updateOurAnimation(); 
+            },10)
+        }
+    },
+    updateOurAnimation(){
+        if (this.our_animation == false){
+            this.our_animation_iter_num = -1 ;
+        } else {
+            // first get current view
+            if (this.our_animation_iter_num ==-1) {
+                this.conf_beta = 0;
+                this.our_animation_iter_num = 0;
+                this.resetSelect();
+            } else {
+                this.updateView()
+                if ( this.conf_beta + parseFloat(this.beta_speed) >=360 ) {
+                    if ( this.our_animation_iter_num >= this.all_clusters ) {
+                        this.our_animation_iter_num = -1 ;
+                        this.updateOurAnimation()
+                    } else {
+                        this.final_clusters=new Array(this.all_clusters).fill(0);
+                        this.final_clusters[this.our_animation_iter_num] = 1
+                        this.our_animation_iter_num = this.our_animation_iter_num + 1;
+                        this.conf_beta = 0;
+                        this.update_option();
+                    }
+                } else {
+                    this.conf_beta = this.conf_beta + parseFloat(this.beta_speed);
+                    this.update_option();
+                }
+            }
+            this.timer = setTimeout(() => {
+                this.updateOurAnimation(); 
+            },10)
+        }
+    },
     //-------------configure display_setting end-------------------//
     getLoadingOption(bk_color,ft_color){
         var curr_title = 'Loading data now ...';
@@ -3087,13 +3173,7 @@ data() {
     window.addEventListener("resize", this.resize_option,true);
     this.InitAtlas();
     this.LoadConfs();
-    if(this.timer){      
-        clearInterval(this.timer)    
-    }else{
-        this.timer = setInterval(()=>{       
-            this.updateView(); 
-        },2000)    
-    }
+    this.set_global_timer();
   },
 };
 </script>
