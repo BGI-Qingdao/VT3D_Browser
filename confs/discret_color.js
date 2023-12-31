@@ -85,7 +85,7 @@ module.exports = {
       '#191970',
     ],
     mesh_colors:[
-      '#7d6a43',
+      '#CCCCCC',
       '#b6b6b6',
       '#a871a7',
       '#609148',
