@@ -149,14 +149,19 @@
                                <!-- start of buttons -->
                                <hr class='dhr'>
                                <el-row style="margin-top:3px;margin-bottom:2px">
-                                  <el-col :span="8" >
+                                  <el-col :span="12" >
                                       <el-button type='success' @click="applyStatus">Apply</el-button>
                                   </el-col>
-                                  <el-col :span="8" >
+                                  <el-col :span="12" >
                                       <el-button type='warning' @click='clearSelect'>Clear</el-button>
                                   </el-col>
-                                  <el-col :span="8" >
+                                </el-row>
+                                <el-row style="margin-top:3px;margin-bottom:2px">
+                                  <el-col :span="12" >
                                       <el-button type='primary' @click='resetSelect'>Reset</el-button>
+                                  </el-col>
+                                  <el-col :span="12" >
+                                      <el-button type='primary' @click='resetColors'>Re-color</el-button>
                                   </el-col>
                                </el-row>
                                <!-- end of buttons -->
@@ -818,11 +823,6 @@
                       </el-collapse-item>
                       <el-collapse-item title="Animation setting:" name="6">
                             <!--
-                            <el-row style="margin:3px;">
-                                <el-switch  active-text="Iterate On" inactive-text="Iterate Off"
-                                    v-model="our_animation_iter" @change="OnOurAnimation" >
-                                </el-switch>
-                            </el-row> 
                             <el-row style="margin-top:3px;margin-bottom:2px">
                                 <el-col :span="12" >
                                     <span  class='mspan'>Alpha speed: </span>
@@ -844,6 +844,10 @@
                                     v-model="our_animation" @change="set_global_timer" >
                                 </el-switch>
                             </el-row>
+                            <el-row style="margin:3px;">
+                                <el-switch  active-text="Iterate Mode" inactive-text="Highlight Mode" v-model="our_animation_iter">
+                                </el-switch>
+                            </el-row> 
                       </el-collapse-item>
                   </el-collapse>
                 </div>
@@ -1120,6 +1124,7 @@ data() {
 
       //------------color legends confs begin------
       // test color 
+      COLOR_ALL1: COLOR_default,
       COLOR_ALL2: COLOR_default,
       COLOR_mesh: COLOR_mesh,
       color: '',
@@ -1172,7 +1177,7 @@ data() {
       conf_beta:0,
       // echarts option end -------------
       // animation details begin --------
-      our_animation_iter: true,
+      our_animation_iter: true, // iter celltype or highlight celltype
       alpha_speed: 0,
       beta_speed:1,
       our_animation:false,
@@ -2391,15 +2396,26 @@ data() {
     LoadConfs(){
       var used_url = this.G_Atlas['conf_url'];
       console.log(used_url);
+      this.COLOR_ALL1 = new Array(this.COLOR_ALL2.length);
+      for(var i=0 ; i < this.COLOR_ALL2.length; i++ ){
+        this.COLOR_ALL1[i] = this.COLOR_ALL2[i]
+      }
       var self = this;
       $.getJSON(used_url,function(_data) {
         console.log("conf loaded");
-        if( 'celltype_color' in _data )
+        if( 'celltype_color' in _data ){
             self.COLOR_ALL2 = _data['celltype_color']
-        if( 'mesh_color' in _data )
+            self.COLOR_ALL1 = new Array(self.COLOR_ALL2.length);
+            for(var i=0 ; i < self.COLOR_ALL2.length; i++ ){
+                self.COLOR_ALL1[i] = self.COLOR_ALL2[i]
+            }
+        }
+        if( 'mesh_color' in _data ) {
             self.COLOR_mesh = _data['mesh_color']
-        if( 'symbol_size' in _data )
+        }
+        if( 'symbol_size' in _data ) {
             self.symbolSize = _data['symbol_size']
+        }
         self.update_option();
       });
     },
@@ -2415,6 +2431,7 @@ data() {
     //-------------global timer setting begin -------------------//
     set_global_timer(){
         if(this.our_animation == false){
+            this.our_animation_iter_num = -1 ;
             if(this.timer){      
                 clearInterval(this.timer)    
             }
@@ -2430,6 +2447,12 @@ data() {
             },10)
         }
     },
+    resetColors() {
+      for(var i=0 ; i < this.COLOR_ALL2.length; i++ ) {
+        this.COLOR_ALL2[i] = this.COLOR_ALL1[i]
+      }
+      this.update_option();
+    },
     updateOurAnimation(){
         if (this.our_animation == false){
             this.our_animation_iter_num = -1 ;
@@ -2437,22 +2460,38 @@ data() {
             // first get current view
             if (this.our_animation_iter_num ==-1) {
                 this.conf_beta = 0;
-                this.our_animation_iter_num = 0;
                 this.resetSelect();
+                this.resetColors();
+                this.our_animation_iter_num = 0;
             } else {
                 this.updateView()
                 if ( this.conf_beta + parseFloat(this.beta_speed) >=360 ) {
+                    // now switch iter or highlight color
                     if ( this.our_animation_iter_num >= this.all_clusters ) {
+                        // reset for next loop
                         this.our_animation_iter_num = -1 ;
                         this.updateOurAnimation()
                     } else {
-                        this.final_clusters=new Array(this.all_clusters).fill(0);
-                        this.final_clusters[this.our_animation_iter_num] = 1
-                        this.our_animation_iter_num = this.our_animation_iter_num + 1;
+                        if ( this.our_animation_iter == true) {
+                            // switch iter
+                            this.final_clusters=new Array(this.all_clusters).fill(0);
+                            this.final_clusters[this.our_animation_iter_num] = 1;
+                        } else {
+                            // switch color
+                            for(var i=0 ; i < this.COLOR_ALL2.length; i++ ) {
+                                if ( i != this.our_animation_iter_num) {
+                                    this.COLOR_ALL2[i] = '#808080';
+                                } else {
+                                    this.COLOR_ALL2[i] = this.COLOR_ALL1[i];
+                                }
+                            }
+                        }
                         this.conf_beta = 0;
+                        this.our_animation_iter_num = this.our_animation_iter_num + 1;
                         this.update_option();
                     }
                 } else {
+                    // rotate only
                     this.conf_beta = this.conf_beta + parseFloat(this.beta_speed);
                     this.update_option();
                 }
