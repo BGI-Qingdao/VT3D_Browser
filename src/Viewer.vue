@@ -847,6 +847,18 @@
                             <el-row style="margin:3px;">
                                 <el-switch  active-text="Iterate Mode" inactive-text="Highlight Mode" v-model="our_animation_iter">
                                 </el-switch>
+                            </el-row>
+                            <el-row style="margin:3px;">
+                                <el-switch  active-text="Next by 180°" inactive-text="Next by 360°" v-model="our_animation_next180">
+                                </el-switch>
+                            </el-row>  
+                            <el-row style="margin:3px;">
+                                <el-switch  active-text="Highlight gray" inactive-text="Highlight alpha" v-model="our_animation_highlight_gray">
+                                </el-switch>
+                            </el-row> 
+                            <el-row style="margin:3px;">
+                                <el-switch  active-text="Auto2/3" inactive-text="None" v-model="our_animation_auto23">
+                                </el-switch>
                             </el-row> 
                       </el-collapse-item>
                   </el-collapse>
@@ -1166,6 +1178,7 @@ data() {
       adjusted_posture:true,
       symbolSize:2,
       symbolAlpha:1.0,
+      symbolAlphaList:null,
       light_intensity:2.0,
       // drawing details conf end----------
       // view option begin -------------
@@ -1178,6 +1191,10 @@ data() {
       // echarts option end -------------
       // animation details begin --------
       our_animation_iter: true, // iter celltype or highlight celltype
+      our_animation_highlight_gray:false,
+      our_animation_auto23: false,
+      our_animation_next180:true,
+      our_animation_flip: 0,
       alpha_speed: 0,
       beta_speed:1,
       our_animation:false,
@@ -1259,7 +1276,7 @@ data() {
     OnChangeMode(){
         this.mode_title = this.curr_mode+" setting";
         this.update_option_deep();
-        console.log(this.curr_mode)
+        //console.log(this.curr_mode)
         this.OffModeFlag()
         if( this.curr_mode == "CellTypes") {
             this.is_ct_mode = true;
@@ -1297,7 +1314,7 @@ data() {
         this.box_scale = 1;
         if( max_length > 300.0 ) this.box_scale = 1.0/max_length*300;
         if( max_length < 100.0 ) this.box_scale = 1.0/max_length*100;
-        console.log(this.box_scale);
+        //console.log(this.box_scale);
         this.unit1 = 1/this.box_scale;
         var curr_distance = 200;
         if(this.box_scale < 1 ) 
@@ -1315,8 +1332,12 @@ data() {
             this.mode_onoff['PAGA_trajectory'] = this.G_Atlas['summary']['option']['PAGA_trajectory']
         }
     },
+    init_arrays(){
+        this.symbolAlphaList = new Array(1000).fill(1);
+    },
     InitAtlas() {
         // Init the celltype setting panel
+        this.init_arrays();
         this.init_options();
         this.init_scale();
         this.resetROIdata();
@@ -1350,9 +1371,9 @@ data() {
     resetCellTypeScattters(){
         var used_url = this.G_Atlas["anno_url"] +"/"+this.curr_anno+".json"
         var self = this;
-        console.log(used_url);
+        //console.log(used_url);
         $.getJSON(used_url,function(_data) {
-          console.log('json loaded');
+          //console.log('json loaded');
           self.setAnnoData(_data);
           self.update_option_deep();
         });
@@ -1394,10 +1415,10 @@ data() {
     loadCCCTable(){
         if ( "loading data" in this.ccc_data ){
             var self = this;
-            console.log('loading CCC dict ... ')
+            //console.log('loading CCC dict ... ')
             $.getJSON(this.G_Atlas["ccc_dict_url"], function(_data){
                 self.ccc_data = _data
-                console.log('CCC dict loaded!!!')
+                //console.log('CCC dict loaded!!!')
             });
         }
     },
@@ -1417,7 +1438,7 @@ data() {
         this.curr_receptor = ''
     },
     SetLigandData(_data){
-        console.log('ligand loaded')
+        //console.log('ligand loaded')
         var gene_xyz= [];
         for(var j=0 ; j< _data.length; j++)
         {
@@ -1487,7 +1508,7 @@ data() {
             this.ligand_json_data = null
     },
     SetReceptorData(_data){
-        console.log('receptor loaded')
+        //console.log('receptor loaded')
         var gene_xyz= [];
         for(var j=0 ; j< _data.length; j++)
         {
@@ -1518,7 +1539,7 @@ data() {
         this.ligand_json_raw = null;
         this.receptor_json_raw = null;
         var self = this;
-        console.log('loading lr genes ... ')
+        //console.log('loading lr genes ... ')
         var ligand_url = this.G_Atlas["ccc_url"]+'/'+this.curr_sender+'/'+this.curr_ligand+'.json'
         var receptor_url = this.G_Atlas["ccc_url"]+'/'+this.curr_reciver+'/'+this.curr_receptor+'.json'
         $.getJSON(ligand_url, function(_data){
@@ -1662,7 +1683,7 @@ data() {
         }
     },
     setGeneData(_data) {
-        console.log('get gene json loaded');
+        //console.log('get gene json loaded');
         var gene_xyz= [];
         this.curr_min_exp = 0;
         this.curr_max_exp = 2;
@@ -2177,7 +2198,7 @@ data() {
       var used_url = this.G_Atlas['meshes_url'];
       var self = this;
       $.getJSON(used_url,function(_data) {
-        console.log("mesh loaded");
+        //console.log("mesh loaded");
         self.setMeshData(_data);
         self.$nextTick(() => {
             self.update_option_deep();
@@ -2395,14 +2416,14 @@ data() {
     //-------------atlas special conf begin -------------------//
     LoadConfs(){
       var used_url = this.G_Atlas['conf_url'];
-      console.log(used_url);
+      //console.log(used_url);
       this.COLOR_ALL1 = new Array(this.COLOR_ALL2.length);
       for(var i=0 ; i < this.COLOR_ALL2.length; i++ ){
         this.COLOR_ALL1[i] = this.COLOR_ALL2[i]
       }
       var self = this;
       $.getJSON(used_url,function(_data) {
-        console.log("conf loaded");
+        //console.log("conf loaded");
         if( 'celltype_color' in _data ){
             self.COLOR_ALL2 = _data['celltype_color']
             self.COLOR_ALL1 = new Array(self.COLOR_ALL2.length);
@@ -2432,6 +2453,7 @@ data() {
     set_global_timer(){
         if(this.our_animation == false){
             this.our_animation_iter_num = -1 ;
+            this.our_animation_flip = 0 ;
             if(this.timer){      
                 clearInterval(this.timer)    
             }
@@ -2456,20 +2478,39 @@ data() {
     updateOurAnimation(){
         if (this.our_animation == false){
             this.our_animation_iter_num = -1 ;
+            this.our_animation_flip = 0 ;
         } else {
             // first get current view
             if (this.our_animation_iter_num ==-1) {
-                this.conf_beta = 0;
+                if (this.our_animation_flip == 0){
+                    this.conf_beta = 0;
+                }else {
+                    this.conf_beta = 180;
+                }
+                this.our_animation_iter_num = 0;
+                if (this.our_animation_auto23)
+                    this.symbolSize = 2 ;
                 this.resetSelect();
                 this.resetColors();
-                this.our_animation_iter_num = 0;
             } else {
                 this.updateView()
-                if ( this.conf_beta + parseFloat(this.beta_speed) >=360 ) {
+                if ( this.conf_beta + parseFloat(this.beta_speed) >=360 || (this.our_animation_next180 == true &&
+                                                                           this.our_animation_flip == 0 && 
+                                                                           this.conf_beta + parseFloat(this.beta_speed) >= 180 ) ) {
                     // now switch iter or highlight color
                     if ( this.our_animation_iter_num >= this.all_clusters ) {
                         // reset for next loop
                         this.our_animation_iter_num = -1 ;
+                        if (this.our_animation_flip == 0 && this.our_animation_next180 == true){
+                            this.our_animation_flip =1 ;
+                        }else{ 
+                            this.our_animation_flip =0;
+                        }
+                        if (this.our_animation_flip == 0 ){
+                            this.conf_beta = 0;
+                        }else {
+                            this.conf_beta = 180;
+                        }
                         this.updateOurAnimation()
                     } else {
                         if ( this.our_animation_iter == true) {
@@ -2477,19 +2518,42 @@ data() {
                             this.final_clusters=new Array(this.all_clusters).fill(0);
                             this.final_clusters[this.our_animation_iter_num] = 1;
                         } else {
-                            // switch color
-                            for(var i=0 ; i < this.COLOR_ALL2.length; i++ ) {
-                                if ( i != this.our_animation_iter_num) {
-                                    this.COLOR_ALL2[i] = '#808080';
-                                } else {
-                                    this.COLOR_ALL2[i] = this.COLOR_ALL1[i];
+                            if (this.our_animation_highlight_gray == true ) {
+                                // switch color
+                                for(var i=0 ; i < this.COLOR_ALL2.length; i++ ) {
+                                    if ( i != this.our_animation_iter_num) {
+                                        this.COLOR_ALL2[i] = '#808080';
+                                    } else {
+                                        this.COLOR_ALL2[i] = this.COLOR_ALL1[i];
+                                    }
+                                }
+                            }else {
+                                // switch color
+                                for(var i=0 ; i < this.COLOR_ALL2.length; i++ ) {
+                                    if ( i != this.our_animation_iter_num) {
+                                        this.symbolAlphaList[i] = 0.03;
+                                    } else {
+                                        this.symbolAlphaList[i] = 1;
+                                    }
                                 }
                             }
                         }
-                        this.conf_beta = 0;
+                        if (this.our_animation_flip == 0&& this.our_animation_next180 == true){
+                            this.our_animation_flip =1 ;
+                        }else{ 
+                            this.our_animation_flip =0;
+                        }
+                        if (this.our_animation_flip == 0){
+                            this.conf_beta = 0;
+                        }else {
+                            this.conf_beta = 180;
+                        }
                         this.our_animation_iter_num = this.our_animation_iter_num + 1;
+                        if (this.our_animation_auto23)
+                            this.symbolSize = 3 ;
                         this.update_option();
                     }
+                
                 } else {
                     // rotate only
                     this.conf_beta = this.conf_beta + parseFloat(this.beta_speed);
@@ -2518,7 +2582,7 @@ data() {
     },
     getMeshSerie(){
         if( this.mesh_json != null ){
-          console.log('draw mesh');
+          //console.log('draw mesh');
           var legend_list = [];
           var series_list = [];
           var legend_show = {};
@@ -2746,12 +2810,12 @@ data() {
         if(this.jsondata == null)
             return null;
         var curr_draw_datas = this.jsondata;
-        console.log('knowing json loaded');
+        //console.log('knowing json loaded');
         var series_list = [];
         var legend_list = [];
         var legend_show = {};
         var curr_color ;
-        console.log('start series');
+        //console.log('start series');
         for( var i = 0 ; i<this.all_clusters; i++ )
         {
           var curr_legend_name = this.curr_legends[i];
@@ -2763,6 +2827,20 @@ data() {
           }
           legend_list.push(curr_legend_name);
           curr_color = this.COLOR_ALL2[i];
+          var sAlpha = this.symbolAlpha
+          if ( this.our_animation == true ){
+            if (this.our_animation_iter == false ) {
+                if ( this.our_animation_highlight_gray){
+                    if( curr_color == "#808080" ){
+                        sAlpha = 0.03;
+                    } else {
+                        sAlpha = 1;
+                    }
+                }else {
+                    sAlpha = this.symbolAlphaList[i];
+                }
+            }
+          }
           var one_series = {
               name : legend_list[i],
               type : 'scatter3D',
@@ -2774,7 +2852,7 @@ data() {
                 //borderColor: curr_color,
                 borderWidth: 0,
                 color: curr_color,
-                opacity: this.symbolAlpha,
+                opacity: sAlpha, //this.symbolAlpha,
               },
               blendMode:this.curr_blender,
               silent : true,
@@ -2791,7 +2869,7 @@ data() {
     getCCCSeries() {
         if( this.ligand_json_data == null || this.receptor_json_data == null)
             return null;
-        console.log('draw CCC now');
+        //console.log('draw CCC now');
         var send_name = this.curr_sender+'('+this.curr_ligand+')';
         var send_series = {
             name : send_name,
@@ -2878,10 +2956,10 @@ data() {
     getPAGASeries(){
         if(this.traj_names == null)
             return null;
-        console.log('draw paga lines now');
+        //console.log('draw paga lines now');
         var series_list = [];
         var legend_list = [];
-        console.log('start series');
+        //console.log('start series');
         for( var i = 0 ; i<this.traj_names.length ; i++ )
         {
             var curr_legend_name = this.traj_names[i];
@@ -2934,10 +3012,10 @@ data() {
                     [used_xmin, used_ymax, used_zmax],
                 ]
             };
-            console.log("box");
+            //console.log("box");
             return box_series;
         } else {
-            console.log("No box");
+            //console.log("No box");
             return null;
         }
     },
@@ -3203,7 +3281,7 @@ data() {
         if (this.curr_mode == "Cell_Cell_Communication" && ccc_series != null){
             opt.visualMap =ccc_series.map_list;
         }
-        console.log('reset option');
+        //console.log('reset option');
         return opt;
       } // end of else.
     } // end of function option.
