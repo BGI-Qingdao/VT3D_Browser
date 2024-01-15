@@ -245,6 +245,11 @@
                                   </el-col>
                               </el-row>
                               <el-row style="margin-top:3px;margin-bottom:2px">
+                                <el-switch  active-text="Noexp On" inactive-text="Noexp Off"
+                                    v-model="noexp_on" @change="refresh" >
+                                </el-switch>
+                              </el-row>
+                              <el-row style="margin-top:3px;margin-bottom:2px">
                                   <el-switch  active-text="Dynamic alpha" inactive-text="Constant alpha"
                                       v-model="use_virtual_alpha" @change="refresh" >
                                   </el-switch>
@@ -1056,6 +1061,8 @@ data() {
       input_gene_id : '',
       curr_gene : "",
       gene_json_raw : null,
+      gene_backgroud : null,
+      gene_backgroud_curr :null,
       gene_json_data : null,
       tmp_vmin:0,
       tmp_vmax:0,
@@ -1064,6 +1071,7 @@ data() {
       curr_cmap : 'BuYeRd',
       use_virtual_alpha: false,
       fish_url:null,
+      noexp_on:false,
       //------------gene expression selection end------
       
       //------------channel selection start------
@@ -1380,6 +1388,7 @@ data() {
     },
     setAnnoData(_data) {
         var curr_draw_datas= [];
+        var gene_backgroud_tmp = [];
         this.final_clusters = new Array(this.all_clusters).fill(0);
         for(var i=0;i<this.all_clusters;i++){
             curr_draw_datas.push([])
@@ -1389,6 +1398,7 @@ data() {
           var curr_item = _data[j];
           //console.log(curr_item);
           curr_draw_datas[parseInt(curr_item[3])].push([curr_item[0]*this.box_scale,curr_item[1]*this.box_scale,curr_item[2]*this.box_scale]);
+          gene_backgroud_tmp.push([curr_item[0]*this.box_scale,curr_item[1]*this.box_scale,curr_item[2]*this.box_scale,0]);
         } // end of for _data
         // -------- mark empty group
         for (var i = 0; i < this.all_clusters; i++){
@@ -1398,6 +1408,7 @@ data() {
             this.final_clusters[i] = 1;
           }
         }
+        this.gene_backgroud = gene_backgroud_tmp;
         this.rawdata = curr_draw_datas;
         this.jsondata = curr_draw_datas;
         this.data_valid = true
@@ -1687,13 +1698,19 @@ data() {
         var gene_xyz= [];
         this.curr_min_exp = 0;
         this.curr_max_exp = 2;
+        var current_gene_with_bg = []
+        for (var j=0; j< this.gene_backgroud.length; j++){
+            current_gene_with_bg.push(this.gene_backgroud[j])
+        }
         for(var j=0 ; j< _data.length; j++)
         {
             var curr_item = _data[j];
             if( parseInt(curr_item[3])+1>  this.curr_max_exp)
                 this.curr_max_exp = parseInt(curr_item[3])+1;
             gene_xyz.push( [curr_item[0]*this.box_scale,curr_item[1]*this.box_scale,curr_item[2]*this.box_scale,curr_item[3]]);
+            current_gene_with_bg.push([curr_item[0]*this.box_scale,curr_item[1]*this.box_scale,curr_item[2]*this.box_scale,curr_item[3]]);
         }
+        this.gene_backgroud_curr = current_gene_with_bg;
         this.tmp_vmin = this.curr_min_exp;
         this.tmp_vmax = this.curr_max_exp;
         this.gene_json_raw= gene_xyz;
@@ -2437,6 +2454,12 @@ data() {
         if( 'symbol_size' in _data ) {
             self.symbolSize = _data['symbol_size']
         }
+        if('all_modes' in _data){
+            self.all_modes = _data['all_modes']
+        }
+        if('noexp_on' in _data){
+            self.noexp_on = _data['noexp_on']
+        }
         self.update_option();
       });
     },
@@ -2704,7 +2727,22 @@ data() {
         if(this.gene_json_data == null)
             return null;
         var legend_name = this.curr_gene;
-        var one_series = {
+        var one_series = null;
+        if (this.noexp_on == true){
+            one_series = {
+                name : this.curr_gene,
+                type : 'scatter3D',
+                dimensions: [ 'x','y','z' ,'exp'],
+                data: this.gene_backgroud_curr,
+                symbolSize: this.symbolSize,
+                symbolAlpha: this.symbolAlpha,
+                itemStyle: {
+                borderWidth: 0,
+            },
+          };
+        }
+        else {
+          one_series = {
             name : this.curr_gene,
             type : 'scatter3D',
             dimensions: [ 'x','y','z' ,'exp'],
@@ -2714,7 +2752,8 @@ data() {
             itemStyle: {
               borderWidth: 0,
             },
-        };
+          };
+        }
         var color_range = this.getColorRange(this.curr_cmap);
         if ( this.use_virtual_alpha == false ){
             var visualMap= [
