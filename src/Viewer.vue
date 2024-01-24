@@ -1,7 +1,24 @@
 <template>
 <div>
-    <!---------------------------- All floating items begin --------------------------------------------------- -->
     <div  style="height=1px;">
+    <!---------------------------- All floating items begin --------------------------------------------------- -->
+      <el-dialog title="celltype color" style="width:500px;" :visible.sync="drawer_alpha" direction="ltr" :before-close="OnDrawerAlphaClose" center>
+          <div>
+            <el-row style="margin-top:3px;margin-bottom:2px">
+                <el-slider  v-model="tmp_symbol_alpha" :step="0.02" :min="0" :max="1"  show-stops>
+                </el-slider>
+            </el-row> 
+            <el-row style="margin-top:3px;margin-bottom:2px">
+                    <el-col :span="12" >
+                        <el-button type='success' @click='applyAlpha'>Apply</el-button>
+                    </el-col>
+                    <el-col :span="12" >
+                        <el-button type='info' @click='closeAlpha'>Close</el-button>
+                    </el-col>
+            </el-row>
+          </div>
+          <!-- end of dialog div -->
+      </el-dialog>
       <el-dialog title="celltype color" style="width:500px;" :visible.sync="drawer" direction="ltr" :before-close="OnDrawerClose" center>
           <div>
               <hr>
@@ -129,7 +146,10 @@
                                     <el-table-column :reserve-selection="true" type="selection" ></el-table-column>
                                     <el-table-column property="Celltype" label="Cell Type" > </el-table-column>
                                     <el-table-column label="Display" >
-                                      <el-button @click="showColorPalette">color</el-button>
+                                      <el-button @click="showColorPalette">RBG</el-button>
+                                    </el-table-column>
+                                    <el-table-column label="AAA" >
+                                        <el-button @click="showAlphaDraw">A</el-button>
                                     </el-table-column>
                                 </el-table>
                                 <el-pagination layout="total,sizes" 
@@ -227,6 +247,17 @@
                                   </el-col>
                                   <el-col :span="10" >
                                       <el-button type="success" @click.native="changeVmax">Apply</el-button>
+                                  </el-col>
+                              </el-row>
+                              <el-row style="margin-top:3px;margin-bottom:2px">
+                                  <el-col :span="8" >
+                                     <span  class='mspan'>exp cutoff:</span>
+                                  </el-col>
+                                  <el-col :span="8" >
+                                      <el-input v-model="expcutoff" placeholder="0"></el-input>
+                                  </el-col>
+                                  <el-col :span="8" >
+                                      <el-button type="success" @click.native="changeExpCutOff">Set</el-button>
                                   </el-col>
                               </el-row>
                               <el-row style="margin-top:3px;margin-bottom:2px">
@@ -850,6 +881,10 @@
                                 </el-switch>
                             </el-row>
                             <el-row style="margin:3px;">
+                                <el-switch  active-text="One-run" inactive-text="All-run" v-model="our_animation_one">
+                                </el-switch>
+                            </el-row>
+                            <el-row style="margin:3px;">
                                 <el-switch  active-text="Iterate Mode" inactive-text="Highlight Mode" v-model="our_animation_iter">
                                 </el-switch>
                             </el-row>
@@ -962,7 +997,7 @@ data() {
       box_scale: 0,
       unit1 :1,
       // working mode end ----------------------------------------
-
+      drawer_alpha:false,
       //------------data selection for cell type begin ------
       anno_array : [],
       curr_anno : null,
@@ -1057,6 +1092,7 @@ data() {
       allTableData: [],
       tableData: [],
       currentGenePage:1,
+      expcutoff:0,
       // end
       input_gene_id : '',
       curr_gene : "",
@@ -1132,7 +1168,7 @@ data() {
           cyan   : null,
       },
       //------------Scoexp heatmap end ------
-
+      tmp_symbol_alpha:1,
       //------------model data : mesh begin ------
       mesh_json : null,
       mesh_alpha: 0.5,
@@ -1182,7 +1218,7 @@ data() {
       black_background:true,
       draw_legends:true,
       draw_grids:false,
-      draw_box :true,
+      draw_box :false,
       adjusted_posture:true,
       symbolSize:2,
       symbolAlpha:1.0,
@@ -1199,6 +1235,7 @@ data() {
       // echarts option end -------------
       // animation details begin --------
       our_animation_iter: true, // iter celltype or highlight celltype
+      our_animation_one:true,//
       our_animation_highlight_gray:false,
       our_animation_auto23: false,
       our_animation_next180:true,
@@ -1716,6 +1753,17 @@ data() {
         this.gene_json_raw= gene_xyz;
         this.updateJsonData();
     },
+    changeExpCutOff(){
+        var curr_exp_array = this.gene_json_raw;
+        var cutoff_gene = []
+        for(var j=0 ; j< curr_exp_array.length; j++){
+            if(curr_exp_array[j][3]>=this.expcutoff){
+                cutoff_gene.push(curr_exp_array[j])
+            }
+        }
+        this.gene_json_data = cutoff_gene;
+        this.update_option();
+    },
     changeVmin(){
         this.curr_min_exp = this.tmp_vmin ;
         this.update_option_deep();
@@ -1781,6 +1829,10 @@ data() {
         this.drawer= false;
         done();
     },
+    OnDrawerAlphaClose(done){
+        this.drawer_alpha= false;
+        done();
+    },
     getRowKey(row) {
       return row.Celltype
     },
@@ -1822,6 +1874,10 @@ data() {
     showColorPalette(){
       this.drawer = true; 
     },
+    showAlphaDraw(){
+        this.tmp_symbol_alpha = this.symbolAlphaList[this.currentCellID];
+        this.drawer_alpha = true;
+    },
     colorValueChange (val) {
      this.color = val.hex;
     },
@@ -1830,8 +1886,16 @@ data() {
       this.option=this.getOption();
       this.drawer = false;
     },
+    applyAlpha(){
+        this.symbolAlphaList[this.currentCellID] = this.tmp_symbol_alpha;
+        this.option=this.getOption();
+        this.drawer_alpha = false;
+    },
     closeColor(){
       this.drawer = false;
+    },
+    closeAlpha(){
+        this.drawer_alpha = false;
     },
     //-------------color palette of celltype ends------------------//
     // ------------------ functions for cell type table end -----------------
@@ -2513,13 +2577,23 @@ data() {
                 this.our_animation_iter_num = 0;
                 if (this.our_animation_auto23)
                     this.symbolSize = 2 ;
-                this.resetSelect();
-                this.resetColors();
+                if (this.our_animation_one == false) {
+                    this.resetSelect();
+                    this.resetColors();
+                }
+                else{
+                    this.update_option()
+                }
             } else {
                 this.updateView()
                 if ( this.conf_beta + parseFloat(this.beta_speed) >=360 || (this.our_animation_next180 == true &&
                                                                            this.our_animation_flip == 0 && 
                                                                            this.conf_beta + parseFloat(this.beta_speed) >= 180 ) ) {
+                    if (this.our_animation_one){
+                        this.our_animation = false;
+                        this.set_global_timer()
+                        return;
+                    }
                     // now switch iter or highlight color
                     if ( this.our_animation_iter_num >= this.all_clusters ) {
                         // reset for next loop
@@ -2866,7 +2940,7 @@ data() {
           }
           legend_list.push(curr_legend_name);
           curr_color = this.COLOR_ALL2[i];
-          var sAlpha = this.symbolAlpha
+          var sAlpha = this.symbolAlphaList[i];
           if ( this.our_animation == true ){
             if (this.our_animation_iter == false ) {
                 if ( this.our_animation_highlight_gray){
