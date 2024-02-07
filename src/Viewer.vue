@@ -141,7 +141,9 @@
                                 <el-table class="table" ref="clusterTable" style="width:100%;" :show-header='false'
                                   :height='height' :row-key="getRowKey" :highlight-current-row='true'
                                   :data="tableDataClusters.slice((currentPage-1)*pageSize,currentPage*pageSize)"
+                                  :row-class-name="tableRowClassName"
                                   @selection-change="handleSelectionChange"
+                                  stripe
                                   @row-click="getRowCelltype" >
                                     <el-table-column :reserve-selection="true" type="selection" ></el-table-column>
                                     <el-table-column property="Celltype" label="Cell Type" > </el-table-column>
@@ -213,7 +215,7 @@
                                         :highlight-current-row='true'
                                         stripe
                                         @row-dblclick='handleRow'>
-                                            <el-table-column prop='smed' label='gene name'></el-table-column>
+                                            <el-table-column prop='smed' label='gene name (Please double click below gene name!)'></el-table-column>
                                         </el-table>
                                         <!-- gene table end-->
                                     </el-col>
@@ -1104,7 +1106,7 @@ data() {
       tmp_vmax:0,
       curr_min_exp:0,
       curr_max_exp:2,
-      curr_cmap : 'BuYeRd',
+      curr_cmap : 'Color',
       use_virtual_alpha: false,
       fish_url:null,
       noexp_on:false,
@@ -1171,7 +1173,7 @@ data() {
       tmp_symbol_alpha:1,
       //------------model data : mesh begin ------
       mesh_json : null,
-      mesh_alpha: 0.5,
+      mesh_alpha: 0.1,
       mesh_conf : {
         names:    [],
         legends : [],
@@ -1279,6 +1281,9 @@ data() {
   methods: {
     tableRowClassName({row, rowIndex}) {
         //console.log(rowIndex)
+        if (rowIndex == this.currentCellID){
+            return 'warning-row';
+        }
         if (rowIndex %2 ==0) {
           return 'warning-row';
         } else if (rowIndex %2 ==1) {
@@ -1363,7 +1368,7 @@ data() {
         this.unit1 = 1/this.box_scale;
         var curr_distance = 200;
         if(this.box_scale < 1 ) 
-            curr_distance = 400;
+            curr_distance = 500;
         else 
             curr_distance = 150;
         this.conf_view_distance=curr_distance
@@ -2523,6 +2528,14 @@ data() {
         }
         if('noexp_on' in _data){
             self.noexp_on = _data['noexp_on']
+        }
+        if('init_pos' in _data){
+            self.conf_view_distance = _data['init_pos']['distance']
+            self.conf_alpha = _data['init_pos']['alpha']
+            self.conf_beta = _data['init_pos']['beta']
+        }
+        if('mesh_alpha' in _data){
+            self.mesh_alpha = _data['mesh_alpha']
         }
         self.update_option();
       });
